@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest';
 import { h, defineComponent } from 'vue';
-import { componentRegistry, viewRegistry } from './registry.js';
+import { componentRegistry, viewRegistry, modelFieldRegistry } from './registry.js';
 import {
   FieldChar,
   FieldText,
@@ -27,7 +27,7 @@ import {
   FieldPercentage
 } from './widgets.js';
 import { RecordProxy } from '@odoo/sdk';
-import { ListRenderer, CardRenderer } from './renderers.js';
+import { ListRenderer, CardRenderer, resolveFieldWidget, FormRenderer } from './renderers.js';
 
 describe('Odoo Vue Base UI Widgets', () => {
   // Populate components in registry for rendering tests
@@ -379,5 +379,36 @@ describe('Odoo Vue Base UI Widgets', () => {
     // Typing 50 in edit mode should write 0.50 back to record
     input.props.onInput({ target: { value: '50' } });
     expect(record.get('tax_rate')).toBe(0.5);
+  });
+
+  test('should dynamically resolve widgets matching field types when widget attribute is omitted in arch', () => {
+    const record = new RecordProxy('res.partner', {
+      active: true, // boolean (type inferred)
+      sequence: 12, // registered integer
+      custom_rate: 0.08, // registered float
+      comment: 'Nice fallback' // type inferred text
+    });
+
+    // 1. Register static model field types in modelFieldRegistry
+    viewRegistry.add('res.partner.line/list', {}); // unrelated registry call to keep it clean
+    modelFieldRegistry.add('res.partner/sequence', 'integer');
+    modelFieldRegistry.add('res.partner/custom_rate', 'float');
+
+    // 2. Assert direct widget overrides take supreme precedence
+    expect(resolveFieldWidget('active', record, { widget: 'progressbar' })).toBe('progressbar');
+
+    // 3. Assert type-based attributes take precedence
+    expect(resolveFieldWidget('active', record, { type: 'boolean' })).toBe('boolean');
+
+    // 4. Assert modelFieldRegistry lookup matches
+    expect(resolveFieldWidget('sequence', record, {})).toBe('integer');
+    expect(resolveFieldWidget('custom_rate', record, {})).toBe('float');
+
+    // 5. Assert value-based type inference (Heuristics)
+    expect(resolveFieldWidget('active', record, {})).toBe('boolean');
+    expect(resolveFieldWidget('comment', record, {})).toBe('text');
+
+    // 6. Assert default fallback
+    expect(resolveFieldWidget('unregistered_field', record, {})).toBe('char');
   });
 });

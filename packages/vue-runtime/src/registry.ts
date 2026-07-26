@@ -21,3 +21,4 @@ export class Registry<T = any> {
 
 export const componentRegistry = new Registry<any>();
 export const viewRegistry = new Registry<any>();
+export const modelFieldRegistry = new Registry<string>();

@@ -1,7 +1,46 @@
 import { defineComponent, h, inject } from 'vue';
 import { Modifier } from '@odoo/sdk';
-import { componentRegistry } from './registry.js';
+import { componentRegistry, modelFieldRegistry } from './registry.js';
 import { ACTION_MANAGER_KEY } from './di.js';
+
+export function resolveFieldWidget(fieldName: string, record: any, nodeAttrs: any): string {
+  if (nodeAttrs?.widget) {
+    return nodeAttrs.widget;
+  }
+  if (nodeAttrs?.type) {
+    return nodeAttrs.type;
+  }
+  const modelName = record?.modelName || '';
+  const registryKey = `${modelName}/${fieldName}`;
+  if (modelName && modelFieldRegistry.has(registryKey)) {
+    return modelFieldRegistry.get(registryKey);
+  }
+  if (record?.get) {
+    const val = record.get(fieldName);
+    if (typeof val === 'boolean') {
+      return 'boolean';
+    }
+    if (Array.isArray(val)) {
+      return 'one2many';
+    }
+    if (fieldName.endsWith('_ids')) {
+      return 'one2many';
+    }
+    if (fieldName.endsWith('_id')) {
+      return 'many2one';
+    }
+    if (fieldName === 'comment' || fieldName === 'note' || fieldName === 'description') {
+      return 'text';
+    }
+    if (typeof val === 'number') {
+      return Number.isInteger(val) ? 'integer' : 'float';
+    }
+    if (typeof val === 'string' && val.includes('<') && val.includes('>')) {
+      return 'html';
+    }
+  }
+  return 'char';
+}
 
 export const ListRenderer = defineComponent({
   props: {
@@ -23,7 +62,7 @@ export const ListRenderer = defineComponent({
         const tdVNodes = archFields.map((f: any) => {
           const fieldName = f.attrs.name;
           if (editable) {
-            const widgetName = f.attrs.widget || 'char';
+            const widgetName = resolveFieldWidget(fieldName, rec, f.attrs);
             const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
             return h('td', null, h(widgetComp, {
               record: rec,
@@ -150,7 +189,7 @@ export const FormRenderer = defineComponent({
         }
 
         // 3. Resolve actual widget from componentRegistry
-        const widgetName = node.attrs?.widget || 'char';
+        const widgetName = resolveFieldWidget(name, props.record, node.attrs);
         const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
 
         return h(widgetComp, {
