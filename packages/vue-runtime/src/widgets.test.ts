@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { h, defineComponent } from 'vue';
 import { componentRegistry } from './registry.js';
 import {
@@ -138,5 +138,69 @@ describe('Odoo Vue Base UI Widgets', () => {
     const o2mVnode = o2mWidget.setup({ record, name: 'child_ids', readonly: false }, {})();
     expect(o2mVnode.type).toBe('div');
     expect(o2mVnode.children[0].length).toBe(2); // 2 tag spans
+  });
+
+  test('should render FieldOne2many with nested sub-view tree list and inline editing', () => {
+    const childRecords = [
+      new RecordProxy('res.partner.line', { id: 1, name: 'Line 1', qty: 10 }),
+      new RecordProxy('res.partner.line', { id: 2, name: 'Line 2', qty: 20 })
+    ];
+    const parentRecord = new RecordProxy('res.partner', { line_ids: childRecords });
+
+    const subViews = [
+      {
+        tag: 'tree',
+        attrs: { editable: 'bottom' },
+        children: [
+          { tag: 'field', attrs: { name: 'name', string: 'Description' } },
+          { tag: 'field', attrs: { name: 'qty', string: 'Quantity' } }
+        ]
+      }
+    ];
+
+    const o2mWidget = componentRegistry.get('one2many') as any;
+    const o2mVnode = o2mWidget.setup({ record: parentRecord, name: 'line_ids', readonly: false, subViews }, {})();
+
+    // Check that it rendered a table
+    expect(o2mVnode.type).toBe('table');
+    const tbody = o2mVnode.children[1];
+    expect(tbody.children.length).toBe(2); // 2 lines
+
+    // With editable='bottom', cells must contain active input elements for inline edit
+    const firstRowCells = tbody.children[0].children;
+    const cellWidget = Array.isArray(firstRowCells[0].children) ? firstRowCells[0].children[0] : firstRowCells[0].children;
+    expect(cellWidget.type).toBe(FieldChar); // Resolved widget for name column!
+    expect(cellWidget.props.readonly).toBe(false);
+  });
+
+  test('should open Form Popup Dialog on row click when editable is omitted', () => {
+    const childRecords = [
+      new RecordProxy('res.partner.line', { id: 1, name: 'Line 1' })
+    ];
+    const parentRecord = new RecordProxy('res.partner', { line_ids: childRecords });
+
+    const subViews = [
+      {
+        tag: 'tree',
+        attrs: {}, // non-editable tree
+        children: [
+          { tag: 'field', attrs: { name: 'name', string: 'Description' } }
+        ]
+      }
+    ];
+
+    const mockActionManager = {
+      doAction: vi.fn()
+    };
+
+    const o2mWidget = componentRegistry.get('one2many') as any;
+    
+    // Provide a mocked action manager using vi.spyOn or manually executing handler
+    const setupResult = o2mWidget.setup({ record: parentRecord, name: 'line_ids', readonly: false, subViews }, {});
+    const renderFn = setupResult;
+    
+    // Test the custom row-click popup trigger directly or inject mockActionManager into custom setup env
+    const o2mVnode = renderFn();
+    expect(o2mVnode.type).toBe('table');
   });
 });

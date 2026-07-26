@@ -1,4 +1,6 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, inject } from 'vue';
+import { ACTION_MANAGER_KEY } from './di.js';
+import { componentRegistry } from './registry.js';
 
 export const FieldChar = defineComponent({
   props: {
@@ -286,26 +288,76 @@ export const FieldOne2many = defineComponent({
   props: {
     record: { type: Object, required: true },
     name: { type: String, required: true },
-    readonly: { type: Boolean, default: false }
+    readonly: { type: Boolean, default: false },
+    subViews: { type: Array, default: () => [] }
   },
   setup(props) {
-    return () => {
-      const val = props.record?.get(props.name) || [];
-      const ids = Array.isArray(val) ? val : [];
+    const actionManager = inject(ACTION_MANAGER_KEY, null);
 
-      if (props.readonly) {
-        const spans = ids.map((id: number) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(id)));
-        return h('div', { class: 'o_field_relational o_readonly' }, spans);
+    return () => {
+      const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list') as any;
+      const val = props.record?.get(props.name) || [];
+      const childRecords = Array.isArray(val) ? val : [];
+
+      // 1. Fallback rendering if no nested tree definition is present
+      if (!treeNode) {
+        if (props.readonly) {
+          const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+          return h('div', { class: 'o_field_relational o_readonly' }, spans);
+        }
+
+        const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+        const addBtn = h('button', {
+          type: 'button',
+          class: 'o_btn o_btn_secondary',
+          onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
+        }, '+ Add Item');
+
+        return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
       }
 
-      const tags = ids.map((id: number) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(id)));
-      const addBtn = h('button', {
-        type: 'button',
-        class: 'o_btn o_btn_secondary',
-        onClick: () => props.record?.set(props.name, [...ids, ids.length + 1])
-      }, '+ Add Item');
+      // 2. High-fidelity dynamic list sub-view rendering
+      const fields = (treeNode.children || []).filter((c: any) => c.tag === 'field');
+      const editable = treeNode.attrs?.editable;
 
-      return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
+      const ths = fields.map((f: any) => h('th', f.attrs?.string || f.attrs?.name || ''));
+      const thead = h('thead', null, h('tr', null, ths));
+
+      const rows = childRecords.map((childRec: any) => {
+        const tds = fields.map((f: any) => {
+          const fieldName = f.attrs.name;
+          if (editable && !props.readonly) {
+            const widgetName = f.attrs.widget || 'char';
+            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
+            return h('td', null, h(widgetComp, {
+              record: childRec,
+              name: fieldName,
+              readonly: false
+            }));
+          } else {
+            const cellVal = childRec?.get ? childRec.get(fieldName) : (childRec[fieldName] || '');
+            return h('td', null, h('span', { class: 'o_cell_value' }, String(cellVal)));
+          }
+        });
+
+        return h('tr', {
+          onClick: () => {
+            if (!editable && actionManager) {
+              actionManager.doAction({
+                name: 'Edit Relation Record',
+                res_model: 'sub.model',
+                type: 'ir.actions.act_window',
+                views: [[false, 'form']],
+                target: 'new',
+                res_id: childRec.id
+              });
+            }
+          }
+        }, tds);
+      });
+
+      const tbody = h('tbody', null, rows);
+      return h('table', { class: 'o_list_view o_subview_list' }, [thead, tbody]);
     };
   }
 });
@@ -314,26 +366,74 @@ export const FieldMany2many = defineComponent({
   props: {
     record: { type: Object, required: true },
     name: { type: String, required: true },
-    readonly: { type: Boolean, default: false }
+    readonly: { type: Boolean, default: false },
+    subViews: { type: Array, default: () => [] }
   },
   setup(props) {
-    return () => {
-      const val = props.record?.get(props.name) || [];
-      const ids = Array.isArray(val) ? val : [];
+    const actionManager = inject(ACTION_MANAGER_KEY, null);
 
-      if (props.readonly) {
-        const spans = ids.map((id: number) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(id)));
-        return h('div', { class: 'o_field_relational o_readonly' }, spans);
+    return () => {
+      const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list') as any;
+      const val = props.record?.get(props.name) || [];
+      const childRecords = Array.isArray(val) ? val : [];
+
+      if (!treeNode) {
+        if (props.readonly) {
+          const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+          return h('div', { class: 'o_field_relational o_readonly' }, spans);
+        }
+
+        const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+        const addBtn = h('button', {
+          type: 'button',
+          class: 'o_btn o_btn_secondary',
+          onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
+        }, '+ Link Item');
+
+        return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
       }
 
-      const tags = ids.map((id: number) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(id)));
-      const addBtn = h('button', {
-        type: 'button',
-        class: 'o_btn o_btn_secondary',
-        onClick: () => props.record?.set(props.name, [...ids, ids.length + 1])
-      }, '+ Link Item');
+      const fields = (treeNode.children || []).filter((c: any) => c.tag === 'field');
+      const editable = treeNode.attrs?.editable;
 
-      return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
+      const ths = fields.map((f: any) => h('th', f.attrs?.string || f.attrs?.name || ''));
+      const thead = h('thead', null, h('tr', null, ths));
+
+      const rows = childRecords.map((childRec: any) => {
+        const tds = fields.map((f: any) => {
+          const fieldName = f.attrs.name;
+          if (editable && !props.readonly) {
+            const widgetName = f.attrs.widget || 'char';
+            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
+            return h('td', null, h(widgetComp, {
+              record: childRec,
+              name: fieldName,
+              readonly: false
+            }));
+          } else {
+            const cellVal = childRec?.get ? childRec.get(fieldName) : (childRec[fieldName] || '');
+            return h('td', null, h('span', { class: 'o_cell_value' }, String(cellVal)));
+          }
+        });
+
+        return h('tr', {
+          onClick: () => {
+            if (!editable && actionManager) {
+              actionManager.doAction({
+                name: 'Edit Relation Record',
+                res_model: 'sub.model',
+                type: 'ir.actions.act_window',
+                views: [[false, 'form']],
+                target: 'new',
+                res_id: childRec.id
+              });
+            }
+          }
+        }, tds);
+      });
+
+      const tbody = h('tbody', null, rows);
+      return h('table', { class: 'o_list_view o_subview_list' }, [thead, tbody]);
     };
   }
 });
