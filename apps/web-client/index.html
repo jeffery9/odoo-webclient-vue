@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Odoo Semantic Compatibility SDK Reference Client</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+      }
+      #app {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+      .o_control_panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #eaeedf;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+      }
+      .o_breadcrumbs {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #714B67; /* Standard Odoo purple */
+      }
+      .o_statusbar {
+        background: #f1f3f4;
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      .o_statusbar_status {
+        background: #714B67;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 30px;
+      }
+      th {
+        background: #f1f3f4;
+        text-align: left;
+        padding: 12px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #666;
+        border-bottom: 2px solid #ddd;
+      }
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+      }
+      tr:hover td {
+        background: #fafafa;
+      }
+      .o_form_view {
+        background: #fbfbfb;
+        border: 1px solid #eaeef0;
+        border-radius: 6px;
+        padding: 20px;
+      }
+      .o_form_sheet {
+        background: #ffffff;
+        border: 1px solid #dcdfe0;
+        border-radius: 4px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      }
+      .o_field_widget {
+        display: inline-block;
+        padding: 6px 12px;
+        font-size: 1rem;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .o_readonly {
+        border-color: transparent;
+        background: transparent;
+        padding-left: 0;
+      }
+      .o_btn {
+        background: #714B67;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .o_btn:hover {
+        background: #5a3a52;
+      }
+      .o_btn_secondary {
+        background: #e0e0e0;
+        color: #333;
+        border: none;
+        padding: 8px 16px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .o_btn_secondary:hover {
+        background: #d0d0d0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

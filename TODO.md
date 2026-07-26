@@ -96,9 +96,9 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ## 🧪 Phase 6: Assembly & E2E Validation
 
 ### Task 6.1: SPA Client Web App
-- [ ] Scaffold `apps/web-client` as a Single Page Application mounting the root ViewRenderer and ActionManager.
-- [ ] Configure Tailwind/CSS styles for modern interface visuals.
+- [x] Scaffold `apps/web-client` as a Single Page Application mounting the root ViewRenderer and ActionManager.
+- [x] Configure Tailwind/CSS styles for modern interface visuals.
 
 ### Task 6.2: E2E and Continuous Integration
-- [ ] Set up automated integration testing via Mock HTTP servers.
-- [ ] Verify clean builds and baseline linting passes across all monorepo packages.
+- [x] Set up automated integration testing via Mock HTTP servers.
+- [x] Verify clean builds and baseline linting passes across all monorepo packages.
