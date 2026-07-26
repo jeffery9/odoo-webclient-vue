@@ -3,43 +3,65 @@ import { Modifier } from '@odoo/sdk';
 import { componentRegistry, modelFieldRegistry } from './registry.js';
 import { ACTION_MANAGER_KEY } from './di.js';
 
-export function resolveFieldWidget(fieldName: string, record: any, nodeAttrs: any): string {
-  if (nodeAttrs?.widget) {
-    return nodeAttrs.widget;
-  }
-  if (nodeAttrs?.type) {
-    return nodeAttrs.type;
-  }
+const WIDGET_COMPATIBILITY_MAP: Record<string, string[]> = {
+  'boolean': ['boolean'],
+  'integer': ['integer', 'float', 'monetary'],
+  'float': ['integer', 'float', 'monetary'],
+  'monetary': ['integer', 'float', 'monetary'],
+  'progressbar': ['integer', 'float', 'monetary'],
+  'percentage': ['integer', 'float', 'monetary'],
+  'priority': ['integer', 'selection', 'char'],
+  'badge': ['selection', 'char', 'integer'],
+  'tag': ['many2many', 'one2many'],
+  'many2one': ['many2one'],
+  'one2many': ['one2many', 'many2many'],
+  'many2many': ['many2many', 'one2many'],
+  'date': ['date', 'datetime'],
+  'datetime': ['datetime', 'date'],
+  'image': ['binary', 'char', 'text'],
+  'url': ['char', 'text'],
+  'email': ['char', 'text'],
+  'phone': ['char', 'text'],
+};
+
+export function getFieldType(fieldName: string, record: any): string {
   const modelName = record?.modelName || '';
   const registryKey = `${modelName}/${fieldName}`;
   if (modelName && modelFieldRegistry.has(registryKey)) {
     return modelFieldRegistry.get(registryKey);
   }
+  if (fieldName.endsWith('_ids')) return 'many2many';
+  if (fieldName.endsWith('_id')) return 'many2one';
+  if (fieldName === 'comment' || fieldName === 'note' || fieldName === 'description') return 'text';
   if (record?.get) {
     const val = record.get(fieldName);
-    if (typeof val === 'boolean') {
-      return 'boolean';
-    }
-    if (Array.isArray(val)) {
-      return 'one2many';
-    }
-    if (fieldName.endsWith('_ids')) {
-      return 'one2many';
-    }
-    if (fieldName.endsWith('_id')) {
-      return 'many2one';
-    }
-    if (fieldName === 'comment' || fieldName === 'note' || fieldName === 'description') {
-      return 'text';
-    }
-    if (typeof val === 'number') {
-      return Number.isInteger(val) ? 'integer' : 'float';
-    }
-    if (typeof val === 'string' && val.includes('<') && val.includes('>')) {
-      return 'html';
-    }
+    if (typeof val === 'boolean') return 'boolean';
+    if (typeof val === 'number') return Number.isInteger(val) ? 'integer' : 'float';
+    if (Array.isArray(val)) return 'one2many';
   }
   return 'char';
+}
+
+export function resolveFieldWidget(fieldName: string, record: any, nodeAttrs: any): string {
+  const fieldType = getFieldType(fieldName, record);
+
+  if (nodeAttrs?.widget) {
+    const widget = nodeAttrs.widget;
+    const compatibleTypes = WIDGET_COMPATIBILITY_MAP[widget];
+    if (compatibleTypes && !compatibleTypes.includes(fieldType)) {
+      console.warn(
+        `[Odoo Compatibility Warning] Widget "${widget}" is incompatible with field "${fieldName}" of type "${fieldType}". Falling back to default widget "${fieldType}".`
+      );
+      return fieldType;
+    }
+    return widget;
+  }
+
+  if (nodeAttrs?.type) {
+    return nodeAttrs.type;
+  }
+
+  return fieldType;
 }
 
 export const ListRenderer = defineComponent({

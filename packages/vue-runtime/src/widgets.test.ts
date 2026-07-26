@@ -394,8 +394,8 @@ describe('Odoo Vue Base UI Widgets', () => {
     modelFieldRegistry.add('res.partner/sequence', 'integer');
     modelFieldRegistry.add('res.partner/custom_rate', 'float');
 
-    // 2. Assert direct widget overrides take supreme precedence
-    expect(resolveFieldWidget('active', record, { widget: 'progressbar' })).toBe('progressbar');
+    // 2. Assert direct widget overrides take supreme precedence (when compatible)
+    expect(resolveFieldWidget('sequence', record, { widget: 'progressbar' })).toBe('progressbar');
 
     // 3. Assert type-based attributes take precedence
     expect(resolveFieldWidget('active', record, { type: 'boolean' })).toBe('boolean');

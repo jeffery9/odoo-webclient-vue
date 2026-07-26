@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { h, defineComponent } from 'vue';
-import { ListRenderer, FormRenderer } from './renderers.js';
+import { ListRenderer, FormRenderer, resolveFieldWidget } from './renderers.js';
 import { componentRegistry } from './registry.js';
 import { FieldChar } from './widgets.js';
 import { RecordProxy } from '@odoo/sdk';
@@ -130,5 +130,26 @@ describe('Odoo Vue View Renderers', () => {
 
     expect(fieldVnode.props.readonly).toBe(true);
     expect(fieldVnode.props.options).toEqual({ no_open: true });
+  });
+
+  test('should enforce widget-field compatibility and auto-fallback to native type on error', () => {
+    // Import resolveFieldWidget
+    const record = new RecordProxy('res.partner', {
+      name: 'John Doe', // char field
+      rating: 3,        // integer field
+    });
+
+    // 1. Compatible cases
+    // progressbar on integer is compatible
+    expect(resolveFieldWidget('rating', record, { widget: 'progressbar' })).toBe('progressbar');
+
+    // 2. Incompatible cases
+    // progressbar on char field is incompatible! Should fallback to field's native type ('char')
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const resolved = resolveFieldWidget('name', record, { widget: 'progressbar' });
+    
+    expect(resolved).toBe('char');
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
