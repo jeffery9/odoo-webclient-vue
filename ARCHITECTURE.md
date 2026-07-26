@@ -146,6 +146,12 @@ Registry.register('field', 'many2one', VueFieldMany2oneComponent);
 ```
 The central view renderer maps structural Semantic IR nodes directly to component registry lookup calls (`resolve('field', node.widget)`), enabling third-party plugins to seamlessly inject custom components without changing core framework codes.
 
+### D. Controller-less MVVM Architecture (Dumb Views, Smart Proxies)
+We completely reject Odoo's legacy MVC pattern (Model -> Renderer -> Controller -> View) in favor of a streamlined MVVM approach:
+- **Smart Proxies (ORM Sink):** All data mutations and Odoo `onchange` logic are pushed down into the `RecordProxy`. When a renderer adapter calls `record.set('field', value)`, the proxy instantly captures the dirty state and automatically triggers the requisite ORM RPC evaluations.
+- **Dumb Presentation Views:** Advanced visual components (Gantt, Pivot, Map, Graph) function as purely reactive presentation adapters. They do not contain any business routing or controller logic. They simply emit generic interaction intents (e.g., `onSelectRecord`).
+- **Workspace Orchestration:** Global navigation and view transition state (e.g., clicking a map pin to open a Form view) are managed entirely by the central `MainWorkspace` and Action Manager router. This decouples visual rendering from action state routing, eliminating the need for bespoke View Controllers.
+
 ---
 
 ## 5. Deployment as a Native Odoo Addon Module
