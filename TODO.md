@@ -116,6 +116,7 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Implement Odoo's classic dual-column or multi-column grid via CSS Grid.
 - [x] Ensure inner `<group>` tags align labels to the left and inputs to the right.
 - [x] Apply the `<sheet>` white-card shadow layout constraints.
+- [x] Deploy global mobile media queries (@media 768px) to auto-stack sidebars, control panel blocks, form grids, and App Switcher tiles on small viewports.
 
 ### Task 7.3: `<notebook>` & `<page>` Tabs
 - [ ] Build responsive Tab view components to handle `<notebook>`.

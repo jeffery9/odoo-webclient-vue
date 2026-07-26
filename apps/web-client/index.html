@@ -865,6 +865,161 @@
       .o_modal_input:focus {
         border-color: #714B67;
       }
+
+      /* ========================================================================= */
+      /* 📱 MOBILE RESPONSIVE MEDIA QUERIES (响应式移动端支持)                       */
+      /* ========================================================================= */
+      @media (max-width: 768px) {
+        /* 1. Global Layout & Navigation Stacking */
+        .o_main_navbar {
+          padding: 0 12px !important;
+          font-size: 13px !important;
+        }
+        .o_navbar_left {
+          gap: 10px !important;
+        }
+        .o_menu_brand {
+          font-size: 14px !important;
+          padding: 4px 8px !important;
+        }
+        .o_navbar_right {
+          gap: 8px !important;
+        }
+        .o_company_switcher {
+          padding: 4px 8px !important;
+          font-size: 11px !important;
+        }
+
+        /* 2. Control Panel Adaptations */
+        .o_control_panel {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 12px !important;
+          padding: 12px !important;
+        }
+        .o_cp_left, .o_cp_right {
+          align-items: flex-start !important;
+          width: 100% !important;
+          gap: 8px !important;
+        }
+        .o_breadcrumb {
+          font-size: 16px !important;
+          flex-wrap: wrap !important;
+        }
+        .o_cp_buttons {
+          flex-wrap: wrap !important;
+          gap: 6px !important;
+          width: 100% !important;
+        }
+        .o_cp_buttons button {
+          flex-grow: 1 !important;
+          text-align: center !important;
+          padding: 6px 10px !important;
+        }
+        .o_cp_searchview {
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        .o_cp_filters {
+          flex-wrap: wrap !important;
+          gap: 4px !important;
+          width: 100% !important;
+        }
+        .o_filter_btn {
+          flex-grow: 1 !important;
+          text-align: center !important;
+        }
+        .o_cp_switch_buttons {
+          width: 100% !important;
+        }
+        .o_switch_btn {
+          flex-grow: 1 !important;
+          text-align: center !important;
+        }
+        .o_pager {
+          width: 100% !important;
+          justify-content: space-between !important;
+          margin-top: 4px !important;
+        }
+
+        /* 3. Sidebar (SearchPanel) Stacking */
+        .o_action_manager {
+          flex-direction: column !important;
+          overflow-y: auto !important;
+        }
+        .o_sidebar, .o_search_panel {
+          flex: none !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          border-right: none !important;
+          border-bottom: 1px solid #dee2e6 !important;
+          padding: 12px 16px !important;
+          box-sizing: border-box !important;
+        }
+        .o_search_panel_title {
+          margin-bottom: 12px !important;
+          padding-bottom: 6px !important;
+        }
+        .o_search_panel_section {
+          margin-bottom: 12px !important;
+        }
+
+        /* 4. Form Sheet & Grid Stacking (Task 7.2 Integration) */
+        .o_form_sheet_bg {
+          padding: 0 !important;
+          background-color: white !important;
+        }
+        .o_form_sheet {
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          padding: 16px !important;
+          max-width: 100% !important;
+          width: 100% !important;
+        }
+        .o_group {
+          flex-direction: column !important;
+          gap: 12px !important;
+        }
+        .o_inner_group {
+          grid-template-columns: 1fr !important;
+          gap: 6px !important;
+          margin-bottom: 12px !important;
+        }
+        .o_form_label {
+          margin-bottom: 2px !important;
+          font-size: 12px !important;
+        }
+
+        /* 5. Enterprise App Switcher Optimization */
+        .o_app_switcher {
+          padding-top: 24px !important;
+        }
+        .o_switcher_search {
+          width: 90% !important;
+          margin-bottom: 24px !important;
+          padding: 8px 16px !important;
+        }
+        .o_app_grid {
+          grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)) !important;
+          gap: 16px !important;
+          width: 100% !important;
+          padding: 0 16px !important;
+          box-sizing: border-box !important;
+        }
+        .o_app_tile {
+          padding: 8px !important;
+        }
+        .o_app_icon_box {
+          width: 52px !important;
+          height: 52px !important;
+          font-size: 22px !important;
+          border-radius: 10px !important;
+        }
+        .o_app_label {
+          font-size: 11px !important;
+        }
+      }
     </style>
   </head>
   <body>
