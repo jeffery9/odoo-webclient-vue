@@ -57,9 +57,13 @@ import {
   resolveDefaultViewType,
 } from './workspace/actions.js';
 import { MainWorkspace } from './workspace/MainWorkspace.js';
+import { registerCoreComponents } from '@odoo/vue-runtime';
 
 // Setup Router
 const router = new HashRouter();
+
+// Register all core Odoo Vue field widgets
+registerCoreComponents();
 
 const App = {
   name: 'App',

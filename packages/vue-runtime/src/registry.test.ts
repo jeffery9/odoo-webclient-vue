@@ -3,8 +3,24 @@ import { Registry, componentRegistry } from './registry.js';
 import { ACTION_MANAGER_KEY, ROUTER_KEY, SESSION_KEY } from './di.js';
 import { provide, inject, defineComponent, createApp } from 'vue';
 import { ActionManager } from '@odoo/sdk';
+import { registerCoreComponents } from './widgets.js';
 
 describe('Odoo Vue Component Registry & DI Bus', () => {
+  test('should support registering core components dynamically', () => {
+    // Clear any previous registry items to verify pure startup sequence
+    (componentRegistry as any).items.clear();
+    expect(componentRegistry.has('char')).toBe(false);
+
+    // Call dynamic setup pipeline
+    registerCoreComponents();
+
+    expect(componentRegistry.has('char')).toBe(true);
+    expect(componentRegistry.has('text')).toBe(true);
+    expect(componentRegistry.has('progressbar')).toBe(true);
+    expect(componentRegistry.has('priority')).toBe(true);
+    expect(componentRegistry.has('percentage')).toBe(true);
+  });
+
   test('should register and retrieve items by category/name successfully', () => {
     const fieldsRegistry = new Registry<any>();
 

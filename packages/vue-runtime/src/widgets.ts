@@ -619,3 +619,29 @@ export const FieldPercentage = defineComponent({
     };
   }
 });
+
+export function registerCoreComponents() {
+  componentRegistry.add('char', FieldChar);
+  componentRegistry.add('text', FieldText);
+  componentRegistry.add('html', FieldHtml);
+  componentRegistry.add('integer', FieldInteger);
+  componentRegistry.add('float', FieldFloat);
+  componentRegistry.add('monetary', FieldMonetary);
+  componentRegistry.add('boolean', FieldBoolean);
+  componentRegistry.add('selection', FieldSelection);
+  componentRegistry.add('date', FieldDate);
+  componentRegistry.add('datetime', FieldDatetime);
+  componentRegistry.add('many2one', FieldMany2one);
+  componentRegistry.add('one2many', FieldOne2many);
+  componentRegistry.add('many2many', FieldMany2many);
+  componentRegistry.add('url', FieldUrl);
+  componentRegistry.add('email', FieldEmail);
+  componentRegistry.add('phone', FieldPhone);
+  componentRegistry.add('badge', FieldBadge);
+  componentRegistry.add('progressbar', FieldProgressBar);
+  componentRegistry.add('priority', FieldPriority);
+  componentRegistry.add('image', FieldImage);
+  componentRegistry.add('handle', FieldHandle);
+  componentRegistry.add('tag', FieldTag);
+  componentRegistry.add('percentage', FieldPercentage);
+}
