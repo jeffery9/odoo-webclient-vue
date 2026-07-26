@@ -28,13 +28,14 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
 
   try {
     const action = await activeClient.value.loadAction(actionId);
-    if (!action || !action.res_model) {
-      throw new Error(`Odoo action ${actionId} specifies no valid model.`);
+    if (!action) {
+      throw new Error(`Odoo action ${actionId} could not be loaded.`);
     }
-    const model = action.res_model;
+
+    activeAction.value = action;
 
     const evaluatedContext = Context.merge(
-      [action.context],
+      [action.context || {}],
       { uid: (activeClient.value as any).uid || 1 }
     );
     activeContext.value = {
@@ -42,6 +43,19 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
       company_id: activeCompany.value.id,
       allowed_company_ids: [activeCompany.value.id]
     };
+
+    if (action.type === 'ir.actions.client' || action.type === 'ir.actions.report') {
+      isConnecting.value = false;
+      return;
+    }
+
+    const defaultView = resolveDefaultViewType(action);
+    activeViewType.value = defaultView;
+
+    if (!action.res_model) {
+      throw new Error(`Odoo action ${actionId} specifies no valid model.`);
+    }
+    const model = action.res_model;
 
     // Load search view alongside regular views to extract search panels
     const viewsToLoad: [number | boolean, string][] = [
@@ -69,12 +83,6 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
       currentOffset.value,
       activeContext.value
     );
-
-    activeAction.value = action;
-
-    // Dynamically resolve default view type based on action metadata
-    const defaultView = resolveDefaultViewType(action);
-    activeViewType.value = defaultView;
 
     if (rawListXml) listArch.value = ArchCompiler.compile(rawListXml);
     if (rawFormXml) formArch.value = ArchCompiler.compile(rawFormXml);

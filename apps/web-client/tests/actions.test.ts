@@ -1,0 +1,123 @@
+import { describe, test, expect, vi, beforeAll } from 'vitest';
+import { activeClient } from '../src/auth/state.js';
+import { executeAction, resolveDefaultViewType } from '../src/workspace/actions.js';
+import { activeAction, activeViewType, activeContext } from '../src/workspace/state.js';
+
+describe('Odoo Action Execution Service', () => {
+  beforeAll(() => {
+    // Setup mock activeClient with full mock implementation
+    activeClient.value = {
+      uid: 1,
+      loadAction: async (actionId: number) => {
+        if (actionId === 10) {
+          return {
+            id: 10,
+            type: 'ir.actions.act_window',
+            res_model: 'res.partner',
+            name: 'Partners',
+            view_mode: 'kanban,tree,form',
+            context: { default_customer: true },
+            domain: []
+          };
+        } else if (actionId === 20) {
+          return {
+            id: 20,
+            type: 'ir.actions.client',
+            tag: 'apps.discuss',
+            name: 'Inbox Dashboard',
+            params: { show_unread: true },
+            context: {}
+          };
+        } else if (actionId === 30) {
+          return {
+            id: 30,
+            type: 'ir.actions.report',
+            report_name: 'account.report_invoice_with_payments',
+            report_type: 'qweb-pdf',
+            name: 'Invoices Printout',
+            context: {}
+          };
+        }
+        return null;
+      },
+      loadViews: async () => {
+        return {
+          fields_views: {
+            list: { arch: '<tree><field name="name"/></tree>' },
+            form: { arch: '<form><field name="name"/></form>' },
+            kanban: { arch: '<kanban><field name="name"/></kanban>' }
+          }
+        };
+      },
+      search_read: async () => {
+        return [{ id: 1, name: 'Test Record' }];
+      },
+      call: async () => {
+        return 1;
+      }
+    } as any;
+  });
+
+  test('should resolve default view types properly for window actions', () => {
+    const action = {
+      type: 'ir.actions.act_window',
+      view_mode: 'kanban,tree,form'
+    };
+    expect(resolveDefaultViewType(action)).toBe('kanban');
+  });
+
+  test('should load and render client actions bypassing model and view retrieval', async () => {
+    // Setup spies to verify they are not called
+    const viewsSpy = vi.spyOn(activeClient.value!, 'loadViews');
+    const searchSpy = vi.spyOn(activeClient.value!, 'search_read');
+
+    await executeAction(20);
+
+    expect(activeAction.value.type).toBe('ir.actions.client');
+    expect(activeAction.value.tag).toBe('apps.discuss');
+    expect(activeAction.value.params.show_unread).toBe(true);
+
+    // Bypassed views and search read
+    expect(viewsSpy).not.toHaveBeenCalled();
+    expect(searchSpy).not.toHaveBeenCalled();
+
+    viewsSpy.mockRestore();
+    searchSpy.mockRestore();
+  });
+
+  test('should load and render report actions bypassing model and view retrieval', async () => {
+    const viewsSpy = vi.spyOn(activeClient.value!, 'loadViews');
+    const searchSpy = vi.spyOn(activeClient.value!, 'search_read');
+
+    await executeAction(30);
+
+    expect(activeAction.value.type).toBe('ir.actions.report');
+    expect(activeAction.value.report_name).toBe('account.report_invoice_with_payments');
+    expect(activeAction.value.report_type).toBe('qweb-pdf');
+
+    // Bypassed views and search read
+    expect(viewsSpy).not.toHaveBeenCalled();
+    expect(searchSpy).not.toHaveBeenCalled();
+
+    viewsSpy.mockRestore();
+    searchSpy.mockRestore();
+  });
+
+  test('should load act_window and execute standard view loading and orm retrieval', async () => {
+    const viewsSpy = vi.spyOn(activeClient.value!, 'loadViews');
+    const searchSpy = vi.spyOn(activeClient.value!, 'search_read');
+
+    await executeAction(10);
+
+    expect(activeAction.value.type).toBe('ir.actions.act_window');
+    expect(activeAction.value.res_model).toBe('res.partner');
+    expect(activeViewType.value).toBe('kanban'); // first mode from view_mode is kanban
+
+    // Invoked standard ORM & metadata views loading pipeline
+    expect(viewsSpy).toHaveBeenCalled();
+    expect(searchSpy).toHaveBeenCalled();
+
+    viewsSpy.mockRestore();
+    searchSpy.mockRestore();
+  });
+});
