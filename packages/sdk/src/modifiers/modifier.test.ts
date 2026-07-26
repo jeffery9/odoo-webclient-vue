@@ -47,4 +47,23 @@ describe('Odoo Modifier DSL Compiler', () => {
     const activeEval = Modifier.evaluate(compiled, recordActive, {});
     expect(activeEval.invisible).toBe(true);
   });
+
+  test('should compile and evaluate Odoo 19 native python expressions in modifiers', () => {
+    const spec = {
+      invisible: "(state == 'draft') and (not active)",
+      readonly: "user_id == 2"
+    };
+    const compiled = Modifier.compile(spec);
+
+    const matchRecord = { state: 'draft', active: false, user_id: 2 };
+    const mismatchRecord = { state: 'done', active: true, user_id: 1 };
+
+    const matchEval = Modifier.evaluate(compiled, matchRecord, {});
+    expect(matchEval.invisible).toBe(true);
+    expect(matchEval.readonly).toBe(true);
+
+    const mismatchEval = Modifier.evaluate(compiled, mismatchRecord, {});
+    expect(mismatchEval.invisible).toBe(false);
+    expect(mismatchEval.readonly).toBe(false);
+  });
 });

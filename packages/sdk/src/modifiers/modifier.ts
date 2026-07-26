@@ -3,9 +3,9 @@ import { Domain } from '../domain/parser.js';
 import { Expression } from '../context/expression.js';
 
 export interface CompiledModifiers {
-  invisible?: boolean | DomainNode;
-  readonly?: boolean | DomainNode;
-  required?: boolean | DomainNode;
+  invisible?: boolean | DomainNode | any;
+  readonly?: boolean | DomainNode | any;
+  required?: boolean | DomainNode | any;
 }
 
 export interface ModifierSpec {
@@ -88,10 +88,19 @@ export class Modifier {
     return compiled;
   }
 
-  private static parseStaticShortcut(val: any): boolean {
+  private static parseStaticShortcut(val: any): boolean | any {
     if (typeof val === 'boolean') return val;
     const s = String(val).trim();
-    return s === '1' || s === 'true' || s === 'True';
+    if (s === '1' || s === 'true' || s === 'True') return true;
+    if (s === '0' || s === 'false' || s === 'False') return false;
+
+    // Compile dynamic Python-like expressions (Odoo 19 native syntax)
+    try {
+      return Expression.parse(s);
+    } catch (e) {
+      console.warn(`Failed to parse modifier expression: "${s}"`, e);
+      return false;
+    }
   }
 
   static evaluate(
@@ -107,7 +116,7 @@ export class Modifier {
   }
 
   private static evaluateCondition(
-    condition: boolean | DomainNode | undefined,
+    condition: boolean | DomainNode | any | undefined,
     record: Record<string, any>,
     env: Record<string, any>
   ): boolean {
@@ -115,10 +124,27 @@ export class Modifier {
     if (typeof condition === 'boolean') return condition;
 
     try {
-      return Domain.evaluate(condition, record);
+      // 1. Evaluate legacy Domain array (Odoo 14-16 style attrs)
+      if (Array.isArray(condition) || (condition.operator && !condition.type)) {
+        return Domain.evaluate(condition, record);
+      }
+
+      // 2. Evaluate dynamic Python expression (Odoo 19 style AST)
+      if (condition.type) {
+        // Create an evaluation context that prioritizes the record proxy getter
+        const evalContext = new Proxy(env || {}, {
+          get: (target, prop: string) => {
+            if (prop in target) return target[prop];
+            return record.get ? record.get(prop) : record[prop];
+          }
+        });
+        return !!Expression.evaluate(condition, evalContext);
+      }
     } catch (e) {
-      console.warn('Failed to evaluate modifier domain condition against record', e);
+      console.warn('Failed to evaluate modifier domain or expression condition against record', e);
       return false;
     }
+
+    return false;
   }
 }
