@@ -43,8 +43,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Write Vitest mocks verifying RPC request mapping and exception propagation.
 
 ### Task 2.2: Session Runtime
-- [ ] Create session state tracker managing `uid`, user company profiles, currency listings, and active contextual attributes.
-- [ ] Implement authentication APIs (`login`, `logout`) against Odoo controller endpoints.
+- [x] Create session state tracker managing `uid`, user company profiles, currency listings, and active contextual attributes.
+- [x] Implement authentication APIs (`login`, `logout`) against Odoo controller endpoints.
 
 ---
 

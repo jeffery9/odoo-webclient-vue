@@ -67,7 +67,37 @@ export class RPCClient {
       });
     }
 
-    return this.executeSingle(payload);
+    return this.request('/web/dataset/call_kw', payload.params);
+  }
+
+  // Unified HTTP Request Method
+  async request(urlPath: string, params: any): Promise<any> {
+    const cleanPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
+    const url = `${this.endpoint}${cleanPath}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'call',
+        id: this.nextId++,
+        params
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+
+    const json = await response.json();
+    if (json.error) {
+      throw RPCClient.parseError(json.error);
+    }
+
+    return json.result;
   }
 
   // High-Level ORM Helper Methods
@@ -110,28 +140,6 @@ export class RPCClient {
     }
 
     return new OdooError(msg, error.code, error.data);
-  }
-
-  private async executeSingle(payload: any): Promise<any> {
-    const url = `${this.endpoint}/web/dataset/call_kw`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
-    }
-
-    const json = await response.json();
-    if (json.error) {
-      throw RPCClient.parseError(json.error);
-    }
-
-    return json.result;
   }
 
   private async flush(): Promise<void> {
