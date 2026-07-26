@@ -59,8 +59,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Implement onchange handlers executing server-side or local dependency recalculations.
 
 ### Task 3.3: Field Lifecycle
-- [ ] Implement parser, formatter, and serializer rules for base types: `Char`, `Integer`, `Float`, `Selection`, `Boolean`.
-- [ ] Implement relationship serializers for complex relational fields: `Many2one`, `One2many`, `Many2many`.
+- [x] Implement parser, formatter, and serializer rules for base types: `Char`, `Integer`, `Float`, `Selection`, `Boolean`.
+- [x] Implement relationship serializers for complex relational fields: `Many2one`, `One2many`, `Many2many`.
 
 ---
 
