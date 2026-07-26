@@ -37,24 +37,38 @@ export class RPCClient {
   private queue: QueuedRequest[] = [];
   private flushScheduled = false;
   private nextId = 1;
+  private csrfToken: string | null = null;
 
   constructor(options: RPCClientOptions) {
     this.endpoint = options.endpoint.replace(/\/$/, '');
     this.isBatchEnabled = !!options.batch;
   }
 
+  setCSRFToken(token: string | null): void {
+    this.csrfToken = token;
+  }
+
+  getCSRFToken(): string | null {
+    return this.csrfToken;
+  }
+
   async call(model: string, method: string, args: any[], kwargs: any): Promise<any> {
     const id = this.nextId++;
+    const params: any = {
+      model,
+      method,
+      args,
+      kwargs
+    };
+    if (this.csrfToken) {
+      params.csrf_token = this.csrfToken;
+    }
+
     const payload = {
       jsonrpc: '2.0',
       method: 'call',
       id,
-      params: {
-        model,
-        method,
-        args,
-        kwargs
-      }
+      params
     };
 
     if (this.isBatchEnabled) {
@@ -75,6 +89,11 @@ export class RPCClient {
     const cleanPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
     const url = `${this.endpoint}${cleanPath}`;
     
+    const rpcParams = { ...params };
+    if (this.csrfToken && !rpcParams.csrf_token) {
+      rpcParams.csrf_token = this.csrfToken;
+    }
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -84,7 +103,7 @@ export class RPCClient {
         jsonrpc: '2.0',
         method: 'call',
         id: this.nextId++,
-        params
+        params: rpcParams
       })
     });
 

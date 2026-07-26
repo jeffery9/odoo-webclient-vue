@@ -124,4 +124,28 @@ describe('Odoo RPC Client & Batching', () => {
 
     await expect(client.read('res.partner', [5], [])).rejects.toThrow(OdooAccessError);
   });
+
+  test('should inject csrf_token inside request params when csrfToken is set', async () => {
+    const mockResponse = {
+      jsonrpc: '2.0',
+      id: 1,
+      result: { success: true }
+    };
+
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse
+    });
+
+    const client = new RPCClient({ endpoint: 'http://localhost:8069' });
+    client.setCSRFToken('test_csrf_token_12345');
+    
+    await client.request('/web/dataset/call_kw', { model: 'res.users', method: 'read' });
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [, options] = (fetch as any).mock.calls[0];
+    const body = JSON.parse(options.body);
+
+    expect(body.params.csrf_token).toBe('test_csrf_token_12345');
+  });
 });

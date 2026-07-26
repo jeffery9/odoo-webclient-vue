@@ -29,7 +29,8 @@ describe('Odoo Session Runtime', () => {
         currencies: {
           1: { symbol: '$', position: 'before' }
         },
-        user_context: { lang: 'en_US', tz: 'UTC' }
+        user_context: { lang: 'en_US', tz: 'UTC' },
+        csrf_token: 'auth_csrf_token_abc123'
       }
     };
 
@@ -48,6 +49,8 @@ describe('Odoo Session Runtime', () => {
     expect(session.name).toBe('Mitchell Admin');
     expect(session.db).toBe('demo_db');
     expect(session.companyId).toBe(1);
+    expect(session.csrfToken).toBe('auth_csrf_token_abc123');
+    expect(client.getCSRFToken()).toBe('auth_csrf_token_abc123');
     expect(session.currencies).toEqual({
       1: { symbol: '$', position: 'before' }
     });
@@ -66,10 +69,12 @@ describe('Odoo Session Runtime', () => {
       companyId: 1,
       userCompanies: { 1: { id: 1, name: 'YourCompany' } },
       currencies: { 1: { symbol: '$', position: 'before' } },
-      userContext: { lang: 'en_US', tz: 'UTC' }
+      userContext: { lang: 'en_US', tz: 'UTC' },
+      csrfToken: 'auth_csrf_token_abc123'
     });
 
     expect(session.isAuthenticated).toBe(true);
+    expect(client.getCSRFToken()).toBe('auth_csrf_token_abc123');
 
     // Mock logout destroy call
     (fetch as any).mockResolvedValueOnce({
@@ -82,6 +87,8 @@ describe('Odoo Session Runtime', () => {
     expect(session.isAuthenticated).toBe(false);
     expect(session.uid).toBeNull();
     expect(session.name).toBeNull();
+    expect(session.csrfToken).toBeNull();
+    expect(client.getCSRFToken()).toBeNull();
     expect(session.userContext).toEqual({});
   });
 });

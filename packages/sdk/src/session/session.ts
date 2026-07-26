@@ -8,6 +8,7 @@ export interface SessionState {
   userCompanies: Record<number, any>;
   currencies: Record<number, any>;
   userContext: Record<string, any>;
+  csrfToken: string | null;
 }
 
 export class SessionManager {
@@ -19,6 +20,7 @@ export class SessionManager {
   private _userCompanies: Record<number, any> = {};
   private _currencies: Record<number, any> = {};
   private _userContext: Record<string, any> = {};
+  private _csrfToken: string | null = null;
 
   constructor(client: RPCClient) {
     this.client = client;
@@ -56,6 +58,10 @@ export class SessionManager {
     return this._userContext;
   }
 
+  get csrfToken(): string | null {
+    return this._csrfToken;
+  }
+
   async login(db: string, login: string, password: string): Promise<any> {
     const result = await this.client.request('/web/session/authenticate', {
       db,
@@ -71,6 +77,10 @@ export class SessionManager {
       this._userCompanies = result.user_companies?.allowed_companies || {};
       this._currencies = result.currencies || {};
       this._userContext = result.user_context || {};
+      this._csrfToken = result.csrf_token ?? null;
+      
+      // Propagate the CSRF token to the RPCClient for subsequent POST requests
+      this.client.setCSRFToken(this._csrfToken);
     }
 
     return result;
@@ -94,6 +104,10 @@ export class SessionManager {
     if (state.userCompanies !== undefined) this._userCompanies = state.userCompanies;
     if (state.currencies !== undefined) this._currencies = state.currencies;
     if (state.userContext !== undefined) this._userContext = state.userContext;
+    if (state.csrfToken !== undefined) {
+      this._csrfToken = state.csrfToken;
+      this.client.setCSRFToken(state.csrfToken);
+    }
   }
 
   private clearState(): void {
@@ -104,5 +118,7 @@ export class SessionManager {
     this._userCompanies = {};
     this._currencies = {};
     this._userContext = {};
+    this._csrfToken = null;
+    this.client.setCSRFToken(null);
   }
 }
