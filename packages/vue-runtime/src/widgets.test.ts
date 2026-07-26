@@ -22,7 +22,9 @@ import {
   FieldProgressBar,
   FieldPriority,
   FieldImage,
-  FieldHandle
+  FieldHandle,
+  FieldTag,
+  FieldPercentage
 } from './widgets.js';
 import { RecordProxy } from '@odoo/sdk';
 import { ListRenderer, CardRenderer } from './renderers.js';
@@ -50,6 +52,8 @@ describe('Odoo Vue Base UI Widgets', () => {
   componentRegistry.add('priority', FieldPriority);
   componentRegistry.add('image', FieldImage);
   componentRegistry.add('handle', FieldHandle);
+  componentRegistry.add('tag', FieldTag);
+  componentRegistry.add('percentage', FieldPercentage);
 
   test('should compile and register FieldChar input widget', () => {
     const record = new RecordProxy('res.partner', { name: 'Mitchell Admin' });
@@ -340,5 +344,40 @@ describe('Odoo Vue Base UI Widgets', () => {
     const handleVnode = handleWidget.setup({ record, name: 'sequence', readonly: true }, {})();
     expect(handleVnode.type).toBe('span');
     expect(handleVnode.children).toBe('☰');
+  });
+
+  test('should render widget tag and percentage correctly with float math conversions', () => {
+    const record = new RecordProxy('res.partner', {
+      tag_ids: [
+        [1, 'Consulting'],
+        [2, 'VIP']
+      ],
+      tax_rate: 0.15
+    });
+
+    // 1. Tag / Tags widget
+    const tagWidget = componentRegistry.get('tag') as any;
+    const tagVnode = tagWidget.setup({ record, name: 'tag_ids', readonly: true }, {})();
+    expect(tagVnode.type).toBe('div');
+    expect(tagVnode.props.class).toBe('o_field_tags');
+    expect(tagVnode.children.length).toBe(2);
+    expect(tagVnode.children[0].children).toBe('Consulting');
+    expect(tagVnode.children[1].children).toBe('VIP');
+
+    // 2. Percentage widget
+    const percentageWidget = componentRegistry.get('percentage') as any;
+    const percentageVnode = percentageWidget.setup({ record, name: 'tax_rate', readonly: false }, {})();
+    
+    // Readonly / Display percentage value is multiplied by 100
+    const readonlyVnode = percentageWidget.setup({ record, name: 'tax_rate', readonly: true }, {})();
+    expect(readonlyVnode.children).toBe('15%');
+
+    // Edit input value is 15
+    const input = percentageVnode.children[0];
+    expect(input.props.value).toBe(15);
+
+    // Typing 50 in edit mode should write 0.50 back to record
+    input.props.onInput({ target: { value: '50' } });
+    expect(record.get('tax_rate')).toBe(0.5);
   });
 });

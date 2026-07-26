@@ -563,3 +563,59 @@ export const FieldHandle = defineComponent({
     };
   }
 });
+
+export const FieldTag = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const list = Array.isArray(val) ? val : (val !== null && val !== undefined ? [val] : []);
+
+      const pills = list.map((item: any) => {
+        const label = Array.isArray(item) ? item[1] : String(item.display_name || item.name || item);
+        return h('span', {
+          class: 'o_tag_badge',
+          style: 'display: inline-block; padding: 2px 8px; margin-right: 4px; margin-bottom: 4px; font-size: 11px; border-radius: 4px; background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;'
+        }, label);
+      });
+
+      return h('div', { class: 'o_field_tags' }, pills);
+    };
+  }
+});
+
+export const FieldPercentage = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const percentValue = Math.round((Number(val) || 0) * 100);
+
+      if (props.readonly) {
+        return h('span', { class: 'o_field_percentage o_readonly' }, `${percentValue}%`);
+      }
+
+      return h('div', {
+        class: 'o_field_percentage_input',
+        style: 'display: flex; align-items: center; gap: 4px;'
+      }, [
+        h('input', {
+          type: 'number',
+          step: 'any',
+          class: 'o_field_percentage',
+          value: percentValue,
+          onInput: (e: any) => props.record?.set(props.name, Number(e.target.value) / 100)
+        }),
+        h('span', null, '%')
+      ]);
+    };
+  }
+});
