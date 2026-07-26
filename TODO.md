@@ -98,6 +98,7 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ### Task 6.1: SPA Client Web App
 - [x] Scaffold `apps/web-client` as a Single Page Application mounting the root ViewRenderer and ActionManager.
 - [x] Configure Tailwind/CSS styles for modern interface visuals.
+- [ ] Add high-fidelity, app-specific SVG icons to the Enterprise App Switcher dashboard for Sales, Purchase, Inventory, Accounting, and other core Odoo models.
 
 ### Task 6.2: E2E and Continuous Integration
 - [x] Set up automated integration testing via Mock HTTP servers.
@@ -117,6 +118,7 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Ensure inner `<group>` tags align labels to the left and inputs to the right.
 - [x] Apply the `<sheet>` white-card shadow layout constraints.
 - [x] Deploy global mobile media queries (@media 768px) to auto-stack sidebars, control panel blocks, form grids, and App Switcher tiles on small viewports.
+- [ ] Correct Form field display layout split: Render both the semantic label (from XML string or ORM field name) and the reactive value/widget correctly, with pixel-perfect alignment inside `<group>` grid columns.
 
 ### Task 7.3: `<notebook>` & `<page>` Tabs
 - [ ] Build responsive Tab view components to handle `<notebook>`.
@@ -149,6 +151,7 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ### Task 8.3: Dynamic Modifiers & Conditional Styling
 - [ ] Execute real-time evaluation of Python-style modifier expressions (using the upgraded SDK Modifier engine) upon every field change.
 - [ ] Dynamically mount/unmount DOM nodes (`invisible`) or toggle input states (`readonly` / `required`).
+- [ ] Implement dynamic field value state control (readonly, required, invisible) synchronized with active view-mode toggles and dynamic Python-style modifier evaluations.
 
 ### Task 8.4: RPC Onchange Cascades
 - [ ] Intercept field updates and automatically dispatch `/web/dataset/call_kw/onchange` requests to Odoo.
