@@ -1,15 +1,16 @@
 import { createApp, h, reactive, ref, computed, onMounted } from 'vue';
-import { RecordProxy, HashRouter } from '@odoo/sdk';
+import { RecordProxy, HashRouter, RPCClient, SessionManager } from '@odoo/sdk';
 import { ListRenderer, FormRenderer } from '@odoo/vue-runtime';
 
-// 1. Setup Mock Odoo Data with standard fields and initial values
-const partnerRecords = reactive([
-  new RecordProxy('res.partner', { id: 1, name: 'Mitchell Admin', active: true, email: 'admin@yourcompany.example.com', website: 'https://yourcompany.com' }),
-  new RecordProxy('res.partner', { id: 2, name: 'Marc Demo', active: true, email: 'demo@yourcompany.example.com', website: 'https://demo.com' }),
-  new RecordProxy('res.partner', { id: 3, name: 'Deco Addict', active: false, email: 'deco@addict.example.com', website: 'https://deco-addict.com' })
-]);
+// 1. Define Standalone Demo Mock Data (Local Fallback Mode)
+const mockPartners = [
+  new RecordProxy('res.partner', { id: 1, name: 'Mitchell Admin (Mock)', active: true, email: 'admin@yourcompany.example.com', website: 'https://yourcompany.com' }),
+  new RecordProxy('res.partner', { id: 2, name: 'Marc Demo (Mock)', active: true, email: 'demo@yourcompany.example.com', website: 'https://demo.com' }),
+  new RecordProxy('res.partner', { id: 3, name: 'Deco Addict (Mock)', active: false, email: 'deco@addict.example.com', website: 'https://deco-addict.com' })
+];
 
-// 2. Active Application State
+// 2. Reactive Application State
+const partnerRecords = reactive<RecordProxy[]>([...mockPartners]);
 const currentApp = ref('Contacts');
 const activeViewType = ref<'list' | 'form'>('list');
 const selectedRecord = ref<RecordProxy>(partnerRecords[0]);
@@ -17,10 +18,20 @@ const readonlyMode = ref(true);
 const searchQuery = ref('');
 const activeFilter = ref<'all' | 'active'>('all');
 
-// 3. Instantiate the HashRouter to power our SPA routing
+// 3. Connect to Real Odoo Backend Modal State
+const showModal = ref(false);
+const hostUrl = ref('http://localhost:8069');
+const dbName = ref('demo');
+const username = ref('admin');
+const password = ref('admin');
+const isConnected = ref(false);
+const isConnecting = ref(false);
+const activeClient = ref<RPCClient | null>(null);
+
+// 4. Instantiate the HashRouter to power our SPA routing
 const router = new HashRouter(window.location);
 
-// 4. Define UI View Compile Archs
+// 5. Define UI View Compile Archs
 const listArch = {
   type: 'list',
   children: [
@@ -46,7 +57,7 @@ const formArch = {
   ]
 };
 
-// 5. Create App Component
+// 6. Create App Component
 const App = {
   setup() {
     // Dynamic record filtering based on filters & search queries
@@ -85,11 +96,68 @@ const App = {
       syncStateToHash();
     };
 
+    // Sync records from a real live backend
+    const syncFromBackend = async () => {
+      if (!activeClient.value) return;
+      try {
+        const realData = await activeClient.value.search_read(
+          'res.partner',
+          [],
+          ['name', 'email', 'website', 'active'],
+          20
+        );
+
+        const proxies = realData.map((d: any) => new RecordProxy('res.partner', d, activeClient.value!));
+        partnerRecords.splice(0, partnerRecords.length, ...proxies);
+        selectedRecord.value = partnerRecords[0] || new RecordProxy('res.partner', { name: 'Empty' });
+        activeViewType.value = 'list';
+        syncStateToHash();
+      } catch (err: any) {
+        alert('Error fetching records from Odoo backend: ' + err.message);
+      }
+    };
+
+    // Authenticate & Connect Odoo Session
+    const handleConnect = async () => {
+      isConnecting.value = true;
+      try {
+        const client = new RPCClient({ endpoint: hostUrl.value });
+        const session = new SessionManager(client);
+        await session.login(dbName.value, username.value, password.value);
+        
+        activeClient.value = client;
+        isConnected.value = true;
+        showModal.value = false;
+
+        // Fetch real data on successful connection
+        await syncFromBackend();
+      } catch (err: any) {
+        alert('Failed to connect to Odoo backend: ' + err.message);
+      } finally {
+        isConnecting.value = false;
+      }
+    };
+
+    // Revert back to isolated mock mode
+    const handleDisconnect = () => {
+      isConnected.value = false;
+      activeClient.value = null;
+      partnerRecords.splice(0, partnerRecords.length, ...mockPartners);
+      selectedRecord.value = partnerRecords[0];
+      activeViewType.value = 'list';
+      syncStateToHash();
+    };
+
     const handleCreate = () => {
-      const newId = partnerRecords.length + 1;
-      const newRec = new RecordProxy('res.partner', { id: newId, name: 'New Contact', active: true });
-      partnerRecords.push(newRec);
-      selectedRecord.value = newRec;
+      if (isConnected.value && activeClient.value) {
+        const newRec = new RecordProxy('res.partner', { id: null, name: 'New Contact', active: true }, activeClient.value);
+        selectedRecord.value = newRec;
+      } else {
+        const newId = partnerRecords.length + 1;
+        const newRec = new RecordProxy('res.partner', { id: newId, name: 'New Contact', active: true });
+        partnerRecords.push(newRec);
+        selectedRecord.value = newRec;
+      }
       activeViewType.value = 'form';
       readonlyMode.value = false;
       syncStateToHash();
@@ -100,9 +168,21 @@ const App = {
     };
 
     const saveChanges = async () => {
-      Object.assign((selectedRecord.value as any)._data, (selectedRecord.value as any)._changes);
-      (selectedRecord.value as any)._changes = {};
-      readonlyMode.value = true;
+      try {
+        if (selectedRecord.value.client) {
+          const isNew = selectedRecord.value.id === null;
+          await selectedRecord.value.save();
+          if (isNew) {
+            partnerRecords.push(selectedRecord.value);
+          }
+        } else {
+          Object.assign((selectedRecord.value as any)._data, (selectedRecord.value as any)._changes);
+          (selectedRecord.value as any)._changes = {};
+        }
+        readonlyMode.value = true;
+      } catch (err: any) {
+        alert('Odoo Backend Save Error: ' + err.message);
+      }
     };
 
     const discardChanges = () => {
@@ -168,7 +248,11 @@ const App = {
           ])
         ]),
         h('div', { class: 'o_navbar_right' }, [
-          h('span', { style: 'font-weight: 500' }, 'Mitchell Admin'),
+          // Connection Toggle Button
+          isConnected.value
+            ? h('button', { class: 'o_connect_btn connected', onClick: handleDisconnect }, '🟢 Connected')
+            : h('button', { class: 'o_connect_btn', onClick: () => { showModal.value = true; } }, '🔌 Connect Backend'),
+          h('span', { style: 'font-weight: 500; margin-left: 10px;' }, 'Mitchell Admin'),
           h('div', { class: 'o_user_avatar' }, 'M')
         ])
       ]),
@@ -265,7 +349,38 @@ const App = {
                 })
               ])
             ])
-      ])
+      ]),
+
+      // 4. Interactive Connect Modal Overlay
+      showModal.value ? h('div', { class: 'o_modal_overlay' }, [
+        h('div', { class: 'o_modal_box' }, [
+          h('h3', { class: 'o_modal_title' }, 'Connect Odoo Backend'),
+          h('div', { class: 'o_modal_field' }, [
+            h('label', { class: 'o_modal_label' }, 'Server Endpoint'),
+            h('input', { class: 'o_modal_input', value: hostUrl.value, onInput: (e: any) => { hostUrl.value = e.target.value; } })
+          ]),
+          h('div', { class: 'o_modal_field' }, [
+            h('label', { class: 'o_modal_label' }, 'Database'),
+            h('input', { class: 'o_modal_input', value: dbName.value, onInput: (e: any) => { dbName.value = e.target.value; } })
+          ]),
+          h('div', { class: 'o_modal_field' }, [
+            h('label', { class: 'o_modal_label' }, 'Username / Email'),
+            h('input', { class: 'o_modal_input', value: username.value, onInput: (e: any) => { username.value = e.target.value; } })
+          ]),
+          h('div', { class: 'o_modal_field' }, [
+            h('label', { class: 'o_modal_label' }, 'Password'),
+            h('input', { type: 'password', class: 'o_modal_input', value: password.value, onInput: (e: any) => { password.value = e.target.value; } })
+          ]),
+          h('div', { style: 'display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px;' }, [
+            h('button', { class: 'o_btn_secondary', onClick: () => { showModal.value = false; } }, 'Cancel'),
+            h('button', {
+              class: 'o_btn_primary',
+              disabled: isConnecting.value,
+              onClick: handleConnect
+            }, isConnecting.value ? 'Connecting...' : 'Connect & Sync')
+          ])
+        ])
+      ]) : null
     ]);
   }
 };

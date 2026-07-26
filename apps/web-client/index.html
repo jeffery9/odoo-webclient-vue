@@ -273,6 +273,75 @@
         border-radius: 4px;
         min-height: 400px;
       }
+
+      /* Connect Modal styling */
+      .o_connect_btn {
+        background-color: #24292e;
+        color: white;
+        border: 1px solid #24292e;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .o_connect_btn.connected {
+        background-color: #22c55e;
+        border-color: #22c55e;
+      }
+      .o_modal_overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .o_modal_box {
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        width: 360px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .o_modal_title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #714B67;
+        margin-top: 0;
+        margin-bottom: 4px;
+      }
+      .o_modal_field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .o_modal_label {
+        font-size: 11px;
+        font-weight: bold;
+        color: #64748b;
+        text-transform: uppercase;
+      }
+      .o_modal_input {
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 8px 10px;
+        font-size: 13px;
+        outline: none;
+      }
+      .o_modal_input:focus {
+        border-color: #714B67;
+      }
     </style>
   </head>
   <body>
