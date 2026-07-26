@@ -211,3 +211,29 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 
 ### Task 11.2: Widget Registry Plugin System
 - [ ] Document how third-party developers can inject custom Vue widgets (e.g., Map, Gantt, Chart) into the `componentRegistry` without modifying the core.
+
+---
+
+## 🌌 Phase 12: High-Fidelity Client-Side Semantics & Context Engine
+
+### Task 12.1: Python Parent Evaluation in Sub-Views
+- [ ] Implement `parent.` context proxy evaluation inside One2many / Many2many inline list/form views (allowing nested line modifiers to reactively query the parent form's field states).
+
+### Task 12.2: Advanced Action Window Dispatching Targets
+- [ ] Support complex target options in `ir.actions.act_window` (`target="current|new|fullscreen|main"`), managing distinct breadcrumb resets, full-viewport client views, and overlay modal stacking.
+- [ ] Handle auto-reload triggers (e.g., `reload` or action callbacks) to automatically refresh parent list data upon modal wizard closure.
+
+### Task 12.3: Localized Formatting & Global Multi-Currency Mapping
+- [ ] Resolve localized float format decimal rounding based on server-side Decimal Precision (`dp`) or field attributes.
+- [ ] Support Odoo monetary symbols mapping (`res.currency` positional alignment - symbol on the left vs. right) based on active company configuration.
+
+---
+
+## ⚙️ Phase 13: Enterprise UX Hardening (Accessibility & High-Density Usability)
+
+### Task 13.1: Power User Keyboard Navigation (Access Keys)
+- [ ] Support global keyboard accelerators for core operations (e.g., `Alt + C` to create, `Alt + S` to save, `Alt + D` to discard).
+- [ ] Support keyboard arrow-key navigation on standard list tables and grid tiles.
+
+### Task 13.2: Multi-Company Security Parity & Dynamic Swapping
+- [ ] Implement rigorous request-level context locking to ensure `allowed_company_ids` and `current_company_id` are explicitly injected into every single model write, create, and search_read transaction.
