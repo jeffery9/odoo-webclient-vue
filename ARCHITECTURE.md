@@ -5,11 +5,16 @@ This document details the architectural specification and design philosophies of
 ---
 
 ## 1. Core Architecture Vision
+The Odoo Semantic Compatibility SDK is a framework-agnostic, pure TypeScript implementation of Odoo's core server semantics. Its design is guided by a single, uncompromising vision:
 
-The Odoo Semantic Compatibility SDK is a framework-agnostic, pure TypeScript implementation of Odoo's core server semantics. Its single, defining principle is:
+> **更快 (Faster), 更小 (Smaller), 更好 UX (Better UX)**
 
-> **Retain Odoo's Semantic Contract; completely reject Odoo's legacy Web Implementation.**
+### Our Core Architectural Philosophy
+1.  **更快 (Faster):** Eliminate client-side runtime XML parsing, dynamic view inheritance computation, and redundant DOM recalculations. Compile Odoo views AOT into flat, optimized JSON Semantic IR, utilizing reactive MVVM bindings for instantaneous view transitions and 0-ms state synchronization.
+2.  **更小 (Smaller):** Keep core bundles pure and free of unnecessary dependencies. Zero legacy Bootstrap or heavy third-party framework overhead; let renderers adapt to native host framework micro-runtimes (like light Vue 3 render loops).
+3.  **更好 UX (Better UX):** Reject Odoo's desktop-only, clunky legacy interfaces. Build mobile-first, high-fidelity responsive components that align with modern web standard accessibility, featuring smooth transitions, touch-friendly layouts, and beautiful typography.
 
+---
 ### A. Semantic Contract (Compatible) vs. Implementation (Rejected)
 
 | Category | Semantic Contract (SDK Scope) | Native Implementation (Rejected) |
