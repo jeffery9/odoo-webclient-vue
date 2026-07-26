@@ -1,10 +1,13 @@
 import { createApp, h, reactive, ref, computed, onMounted } from 'vue';
 import { RecordProxy, HashRouter, RPCClient, SessionManager, ArchCompiler } from '@odoo/sdk';
 import { ListRenderer, FormRenderer } from '@odoo/vue-runtime';
+import { getSavedConfig, saveConfig, isOdooAddonMode } from './config.js';
 
 // ==========================================
 // 1. Reactive Web Client State (100% Dynamic)
 // ==========================================
+const savedConfig = getSavedConfig();
+
 const isAuthenticated = ref(false);
 const isConnecting = ref(false);
 const menus = ref<any[]>([]);
@@ -19,6 +22,14 @@ const readonlyMode = ref(true);
 const searchQuery = ref('');
 const activeFilter = ref<'all' | 'active'>('all');
 
+// Developer & Connection configurations
+const isDevMode = ref(savedConfig.isDevMode);
+const hostUrl = ref(savedConfig.hostUrl);
+const dbName = ref(savedConfig.dbName);
+const username = ref(savedConfig.username);
+const password = ref(savedConfig.password);
+const activeClient = ref<RPCClient | null>(null);
+
 // Control Panel Pagination
 const currentOffset = ref(0);
 const currentLimit = ref(20);
@@ -29,13 +40,6 @@ const listArch = ref<any>({ type: 'list', children: [] });
 const formArch = ref<any>({ type: 'form', children: [] });
 const kanbanArch = ref<any>({ type: 'kanban', children: [] });
 
-// Connection Backend State
-const hostUrl = ref('http://localhost:8069');
-const dbName = ref('demo');
-const username = ref('admin');
-const password = ref('admin');
-const activeClient = ref<RPCClient | null>(null);
-
 // 2. Instantiate HashRouter
 const router = new HashRouter(window.location);
 
@@ -44,7 +48,6 @@ const router = new HashRouter(window.location);
 // ==========================================
 const App = {
   setup() {
-    // Dynamic record filtering based on search query
     const filteredRecords = computed(() => {
       return partnerRecords.filter(rec => {
         const nameVal = rec.get('name') || rec.get('display_name') || '';
@@ -53,6 +56,16 @@ const App = {
         return matchesSearch && matchesFilter;
       });
     });
+
+    const persistSettings = () => {
+      saveConfig({
+        isDevMode: isDevMode.value,
+        hostUrl: hostUrl.value,
+        dbName: dbName.value,
+        username: username.value,
+        password: password.value
+      });
+    };
 
     const syncStateToHash = () => {
       const params: Record<string, string | number> = {
@@ -66,7 +79,7 @@ const App = {
       router.setParams(params);
     };
 
-    // Load Odoo views & data from backend dynamically
+    // Load Odoo views & data dynamically
     const executeAction = async (actionId: number, options?: { resetOffset?: boolean }) => {
       if (!activeClient.value) return;
       isConnecting.value = true;
@@ -75,14 +88,12 @@ const App = {
       }
 
       try {
-        // 1. Load Action details from Odoo
         const action = await activeClient.value.loadAction(actionId);
         if (!action || !action.res_model) {
           throw new Error(`Odoo action ${actionId} specifies no valid model.`);
         }
         const model = action.res_model;
 
-        // 2. Load View Architectures from Odoo (XML)
         const viewsToLoad: [number | boolean, string][] = action.views || [[false, 'list'], [false, 'form'], [false, 'kanban']];
         const viewsResponse = await activeClient.value.loadViews(model, viewsToLoad);
         const viewsMap = viewsResponse?.fields_views || {};
@@ -91,14 +102,10 @@ const App = {
         const rawFormXml = viewsMap.form?.arch || '';
         const rawKanbanXml = viewsMap.kanban?.arch || '';
 
-        // 3. Load record counts for Pager
         const domain = action.domain || [];
         totalRecordsCount.value = await activeClient.value.call(model, 'search_count', [domain], {});
 
-        // Determine fields used in compiled layout (extract name / active as fallback)
         const fieldsToSelect: string[] = ['name', 'active'];
-
-        // 4. Load Records from Odoo Server
         const recordsData = await activeClient.value.search_read(
           model,
           domain,
@@ -109,12 +116,10 @@ const App = {
 
         activeAction.value = action;
 
-        // 5. Compile XML into AST on the fly!
         if (rawListXml) listArch.value = ArchCompiler.compile(rawListXml);
         if (rawFormXml) formArch.value = ArchCompiler.compile(rawFormXml);
         if (rawKanbanXml) kanbanArch.value = ArchCompiler.compile(rawKanbanXml);
 
-        // 6. Instantiate reactive proxies
         const proxies = recordsData.map((d: any) => new RecordProxy(model, d, activeClient.value!));
         partnerRecords.splice(0, partnerRecords.length, ...proxies);
         selectedRecord.value = partnerRecords[0] || null;
@@ -153,7 +158,67 @@ const App = {
       }
     };
 
-    // Authenticate and fetch menus from Odoo server
+    // Load enterprise menu map
+    const bootstrapMenus = async (client: RPCClient) => {
+      // Load Menus and Translations concurrently to match the exact Odoo network boot footprint!
+      const [odooMenus, translations] = await Promise.all([
+        client.loadMenus(),
+        client.loadTranslations('en_US')
+      ]);
+
+      const rootMenu = odooMenus?.root || {};
+      const parsedApps: any[] = [];
+
+      if (rootMenu.children) {
+        for (const mid of rootMenu.children) {
+          const m = odooMenus[mid];
+          if (m) {
+            let actId = m.actionID || m.action_id || m.action;
+            if (typeof actId === 'string') {
+              const parts = actId.split(',');
+              actId = Number(parts[parts.length - 1]);
+            }
+
+            const subsections: any[] = [];
+            if (m.children && m.children.length > 0) {
+              const groupItems: any[] = [];
+              for (const subId of m.children) {
+                const subMenu = odooMenus[subId];
+                if (subMenu) {
+                  let subActId = subMenu.actionID || subMenu.action_id || subMenu.action;
+                  if (typeof subActId === 'string') {
+                    const parts = subActId.split(',');
+                    subActId = Number(parts[parts.length - 1]);
+                  }
+                  if (subActId) {
+                    groupItems.push({ name: subMenu.name, actionID: subActId });
+                  }
+                }
+              }
+              if (groupItems.length > 0) {
+                subsections.push({ title: m.name, items: groupItems });
+              }
+            }
+
+            parsedApps.push({
+              id: m.id,
+              name: m.name,
+              icon: m.name.charAt(0).toUpperCase(),
+              color: '#71639e',
+              actionID: actId || null,
+              subsections: subsections.length > 0 ? subsections : undefined
+            });
+          }
+        }
+      }
+
+      if (parsedApps.length > 0) {
+        menus.value = parsedApps;
+        await selectApp(parsedApps[0]);
+      }
+    };
+
+    // Authenticate and connect
     const handleConnect = async () => {
       isConnecting.value = true;
       try {
@@ -163,62 +228,29 @@ const App = {
         
         activeClient.value = client;
         isAuthenticated.value = true;
+        persistSettings();
 
-        // Load Odoo corporate menu map
-        const odooMenus = await client.loadMenus();
-        const rootMenu = odooMenus?.root || {};
-        const parsedApps: any[] = [];
-
-        if (rootMenu.children) {
-          for (const mid of rootMenu.children) {
-            const m = odooMenus[mid];
-            if (m) {
-              let actId = m.actionID || m.action_id || m.action;
-              if (typeof actId === 'string') {
-                const parts = actId.split(',');
-                actId = Number(parts[parts.length - 1]);
-              }
-
-              // Extract sub-sections
-              const subsections: any[] = [];
-              if (m.children && m.children.length > 0) {
-                const groupItems: any[] = [];
-                for (const subId of m.children) {
-                  const subMenu = odooMenus[subId];
-                  if (subMenu) {
-                    let subActId = subMenu.actionID || subMenu.action_id || subMenu.action;
-                    if (typeof subActId === 'string') {
-                      const parts = subActId.split(',');
-                      subActId = Number(parts[parts.length - 1]);
-                    }
-                    if (subActId) {
-                      groupItems.push({ name: subMenu.name, actionID: subActId });
-                    }
-                  }
-                }
-                if (groupItems.length > 0) {
-                  subsections.push({ title: m.name, items: groupItems });
-                }
-              }
-
-              parsedApps.push({
-                id: m.id,
-                name: m.name,
-                icon: m.name.charAt(0).toUpperCase(),
-                color: '#71639e',
-                actionID: actId || null,
-                subsections: subsections.length > 0 ? subsections : undefined
-              });
-            }
-          }
-        }
-
-        if (parsedApps.length > 0) {
-          menus.value = parsedApps;
-          await selectApp(parsedApps[0]);
-        }
+        await bootstrapMenus(client);
       } catch (err: any) {
         alert('Failed to connect to Odoo backend: ' + err.message);
+      } finally {
+        isConnecting.value = false;
+      }
+    };
+
+    // Attempt passwordless SSO boot when embedded in real Odoo Addon (Same-origin cookies)
+    const handleAddonAutoLogin = async () => {
+      isConnecting.value = true;
+      try {
+        // In Odoo Addon mode, the cookies are already active. Just call relative load_menus!
+        const relativeClient = new RPCClient({ endpoint: window.location.origin });
+        await bootstrapMenus(relativeClient);
+        
+        activeClient.value = relativeClient;
+        isAuthenticated.value = true;
+      } catch (err: any) {
+        // If SSO cookie is missing/expired, fall back to showing the connect modal
+        isAuthenticated.value = false;
       } finally {
         isConnecting.value = false;
       }
@@ -318,6 +350,12 @@ const App = {
         await handleHashNavigation(initialParams);
       }
       router.onNavigate(handleHashNavigation);
+
+      // Auto SSO Trigger in production module
+      if (isOdooAddonMode()) {
+        isDevMode.value = false;
+        await handleAddonAutoLogin();
+      }
     });
 
     return () => h('div', { style: 'height: 100%; display: flex; flex-direction: column;' }, [
@@ -344,24 +382,36 @@ const App = {
       // 2. Clean Login Page (If Unauthenticated)
       !isAuthenticated.value ? h('div', { class: 'o_modal_overlay' }, [
         h('div', { class: 'o_modal_box' }, [
-          h('h3', { class: 'o_modal_title' }, 'Odoo Enterprise Connect'),
-          h('div', { class: 'o_modal_field' }, [
-            h('label', { class: 'o_modal_label' }, 'Server Endpoint'),
-            h('input', { class: 'o_modal_input', value: hostUrl.value, onInput: (e: any) => { hostUrl.value = e.target.value; } })
+          h('div', { style: 'display: flex; justify-content: space-between; align-items: center;' }, [
+            h('h3', { class: 'o_modal_title' }, 'Odoo Enterprise Connect'),
+            // Developer mode toggles inside connection portal!
+            h('button', {
+              class: ['o_filter_btn', isDevMode.value ? 'active' : ''],
+              onClick: () => { isDevMode.value = !isDevMode.value; persistSettings(); }
+            }, 'Dev Settings')
           ]),
-          h('div', { class: 'o_modal_field' }, [
-            h('label', { class: 'o_modal_label' }, 'Database'),
-            h('input', { class: 'o_modal_input', value: dbName.value, onInput: (e: any) => { dbName.value = e.target.value; } })
-          ]),
+
+          // Only render Server Endpoint fields in Developer standalone mode!
+          isDevMode.value ? h('div', null, [
+            h('div', { class: 'o_modal_field', style: 'margin-bottom: 12px;' }, [
+              h('label', { class: 'o_modal_label' }, 'Server Endpoint'),
+              h('input', { class: 'o_modal_input', value: hostUrl.value, onInput: (e: any) => { hostUrl.value = e.target.value; persistSettings(); } })
+            ]),
+            h('div', { class: 'o_modal_field', style: 'margin-bottom: 12px;' }, [
+              h('label', { class: 'o_modal_label' }, 'Database'),
+              h('input', { class: 'o_modal_input', value: dbName.value, onInput: (e: any) => { dbName.value = e.target.value; persistSettings(); } })
+            ])
+          ]) : null,
+
           h('div', { class: 'o_modal_field' }, [
             h('label', { class: 'o_modal_label' }, 'Username / Email'),
-            h('input', { class: 'o_modal_input', value: username.value, onInput: (e: any) => { username.value = e.target.value; } })
+            h('input', { class: 'o_modal_input', value: username.value, onInput: (e: any) => { username.value = e.target.value; persistSettings(); } })
           ]),
-          h('div', { class: 'o_modal_field' }, [
+          h('div', { class: 'o_modal_field', style: 'margin-top: 12px;' }, [
             h('label', { class: 'o_modal_label' }, 'Password'),
-            h('input', { type: 'password', class: 'o_modal_input', value: password.value, onInput: (e: any) => { password.value = e.target.value; } })
+            h('input', { type: 'password', class: 'o_modal_input', value: password.value, onInput: (e: any) => { password.value = e.target.value; persistSettings(); } })
           ]),
-          h('div', { style: 'display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px;' }, [
+          h('div', { style: 'display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;' }, [
             h('button', {
               class: 'o_btn_primary',
               disabled: isConnecting.value,

@@ -145,3 +145,35 @@ UI widgets are registered via a lightweight lookup system:
 Registry.register('field', 'many2one', VueFieldMany2oneComponent);
 ```
 The central view renderer maps structural Semantic IR nodes directly to component registry lookup calls (`resolve('field', node.widget)`), enabling third-party plugins to seamlessly inject custom components without changing core framework codes.
+
+---
+
+## 5. Deployment as a Native Odoo Addon Module
+
+In production environments, the Compiled Web Client SPA can be packed and deployed directly as a native Odoo addon module. 
+
+### A. Directory Structure
+```text
+my_custom_webclient/
+├── __init__.py
+├── __manifest__.py
+│   # Manifest registers our static JS/CSS assets into Odoo asset bundles
+├── controllers/
+│   └── main.py  # Serves custom routing if needed
+├── static/
+│   └── src/
+│       ├── js/
+│       │   └── index-ClqcTrB4.js  # Compiled SPA assets
+│       └── css/
+│           └── index-style.css
+└── views/
+    └── templates.xml  # Embeds client mounting point (<div id="app">)
+```
+
+### B. Auto SSO Boot Sequence (Relative Host Mode)
+Because the app is served from the same origin under the Odoo Addon directory, browser sessions and HttpOnly cookies (`session_id`) are automatically shared. 
+1. Our configuration layer (`config.ts`) automatically detects `isOdooAddonMode() === true`.
+2. The `main.ts` loader disables manual `isDevMode` config inputs and attempts passwordless relative authentication.
+3. It directly triggers `/web/webclient/load_menus` using the current browser domain origin.
+4. Odoo's web server authenticates the session automatically, bypassing the manual sign-in portal entirely and delivering a true seamless Single Sign-On (SSO) experience!
+

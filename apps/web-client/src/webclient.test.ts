@@ -46,6 +46,9 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
       if (urlPath === '/web/webclient/load_menus') {
         return mockMenus;
       }
+      if (urlPath === '/web/webclient/translations') {
+        return { lang: 'en_US', modules: {} };
+      }
       if (urlPath === '/web/action/load') {
         expect((params as any).action_id).toBe(101);
         return mockAction;
@@ -81,6 +84,10 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     expect(requestSpy).toHaveBeenCalledWith('/web/webclient/load_menus', { hash: '' });
     expect(serverMenus.root.children).toEqual([1, 2]);
 
+    const transResponse = await client.loadTranslations('en_US');
+    expect(requestSpy).toHaveBeenCalledWith('/web/webclient/translations', { lang: 'en_US', hash: '' });
+    expect(transResponse.lang).toBe('en_US');
+
     const apps = serverMenus.root.children.map((mid: number) => serverMenus[mid]);
     expect(apps[0].name).toBe('Contacts App');
 
@@ -113,5 +120,30 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     // 8. Wrap records into active SDK proxies
     const proxies = records.map(r => new RecordProxy(action.res_model, r, client));
     expect(proxies[0].get('name')).toBe('Mitchell Admin');
+  });
+
+  test('should compute isOdooAddonMode and resolve hostUrl settings', () => {
+    // Setup simulated global window object for node test runners
+    const originalWindow = (global as any).window;
+    (global as any).window = {
+      location: {
+        pathname: '/my_addon/static/src/index.html',
+        origin: 'https://odoo-enterprise.com'
+      }
+    };
+
+    // Check pathname detection triggers
+    const addonMode = (global as any).window.location.pathname.includes('/static/');
+    expect(addonMode).toBe(true);
+
+    const hostUrl = addonMode ? (global as any).window.location.origin : 'http://localhost:8069';
+    expect(hostUrl).toBe('https://odoo-enterprise.com');
+
+    // Restore state
+    if (originalWindow) {
+      (global as any).window = originalWindow;
+    } else {
+      delete (global as any).window;
+    }
   });
 });

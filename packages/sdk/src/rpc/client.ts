@@ -105,6 +105,10 @@ export class RPCClient {
     return this.request('/web/webclient/load_menus', { hash: '' });
   }
 
+  async loadTranslations(lang = 'en_US', hash = ''): Promise<any> {
+    return this.request('/web/webclient/translations', { lang, hash });
+  }
+
   async loadAction(actionId: number): Promise<any> {
     return this.request('/web/action/load', { action_id: actionId });
   }
