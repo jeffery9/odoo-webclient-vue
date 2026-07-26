@@ -93,7 +93,7 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 
 ---
 
-## 🧪 Phase 6: Assembly & E2E Validation
+## Phase 6: Assembly & E2E Validation
 
 ### Task 6.1: SPA Client Web App
 - [x] Scaffold `apps/web-client` as a Single Page Application mounting the root ViewRenderer and ActionManager.
@@ -102,3 +102,88 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ### Task 6.2: E2E and Continuous Integration
 - [x] Set up automated integration testing via Mock HTTP servers.
 - [x] Verify clean builds and baseline linting passes across all monorepo packages.
+
+---
+
+## 🎨 Phase 7: View Layout Semantic Alignment (Odoo UI/UX Fidelity)
+
+### Task 7.1: `<header>` & `<statusbar>` Layouts
+- [ ] Render the statusflow bar at the top of Form views.
+- [ ] Parse `statusbar_visible` and compute active state highlighting.
+- [ ] Render functional stage transition buttons (e.g., "Confirm", "Draft").
+
+### Task 7.2: `<sheet>` & `<group>` / `<col>` Responsive Grid
+- [ ] Implement Odoo's classic dual-column or multi-column grid via CSS Grid.
+- [ ] Ensure inner `<group>` tags align labels to the left and inputs to the right.
+- [ ] Apply the `<sheet>` white-card shadow layout constraints.
+
+### Task 7.3: `<notebook>` & `<page>` Tabs
+- [ ] Build responsive Tab view components to handle `<notebook>`.
+- [ ] Lazy-load or conditionally render `<page>` contents to optimize performance, especially for One2many/Many2many sub-lists.
+
+### Task 7.4: Title, Avatar & Lists Semantics (per `list_view.rng`)
+- [ ] Implement layout rules for `oe_title` (large font headers) and `oe_avatar` (floating top-right image placeholders).
+- [ ] Support `decoration-*` attributes (e.g., `decoration-danger`, `decoration-muted`) for dynamic row styling based on record state in lists.
+- [ ] Implement `editable="top|bottom"` for inline list editing without opening a form view.
+
+---
+
+## ⚙️ Phase 8: View State Management & Finite-State Controls
+
+### Task 8.1: Read/Write Mode Transition (Readonly State)
+- [ ] Implement global `readonlyMode` state toggling in workspaces.
+- [ ] Auto-degrade all input widgets (select, input, relations) into plain text spans when in readonly mode.
+- [ ] Wire up the "Edit", "Save", and "Discard" control panel buttons.
+
+### Task 8.2: Transaction Cache & Rollover
+- [ ] Utilize `RecordProxy._changes` to track modified fields.
+- [ ] Clear modifications on "Discard" and restore pristine state.
+- [ ] Implement robust error handling and validation hooks before "Save" (RPC write/create).
+
+### Task 8.3: Dynamic Modifiers & Conditional Styling
+- [ ] Execute real-time evaluation of Python-style modifier expressions (using the upgraded SDK Modifier engine) upon every field change.
+- [ ] Dynamically mount/unmount DOM nodes (`invisible`) or toggle input states (`readonly` / `required`).
+
+### Task 8.4: RPC Onchange Cascades
+- [ ] Intercept field updates and automatically dispatch `/web/dataset/call_kw/onchange` requests to Odoo.
+- [ ] Merge the returned `value` payload into the proxy and update the DOM reactively.
+- [ ] Apply the returned `domain` restrictions to relational widgets (e.g., filtering `state_id` when `country_id` changes).
+
+---
+
+## 🔗 Phase 9: Relational Widget Hardening (M2O, O2M, M2M)
+
+### Task 9.1: Many2one Enhancements
+- [ ] Implement debounce-based Search/Autocomplete dropdowns.
+- [ ] Add "Search More..." modal popup support.
+
+### Task 9.2: One2many / Many2many Inline Editing
+- [ ] Implement inline row addition (Add a line) in Sub-List (tree) views.
+- [ ] Support popup form dialogs for complex O2M record creation.
+
+---
+
+## 🚀 Phase 10: GitHub Open Source Readiness (DevOps & Docs)
+
+### Task 10.1: Documentation & Guides
+- [ ] Document the architecture (AOT XML Compilation, Zero-DOM reactivity, and Controller-less MVVM) in a comprehensive `README.md`.
+- [ ] Expand on `docs/` folder containing `ARCHITECTURE.md`, `LAYOUT.md`, and custom Widget Renderer development.
+
+### Task 10.2: CI/CD Pipeline Setup
+- [ ] Automate Vitest test runs for PRs.
+- [ ] Setup ESLint / Prettier code quality gates.
+- [ ] Automate NPM package publishing (`@odoo/sdk`, `@odoo/vue-runtime`).
+
+### Task 10.3: Mock Sandbox Environment
+- [ ] Provide a standalone, mocked Vite environment (or Dockerized Odoo) so contributors can run the Web Client without a live backend.
+
+---
+
+## 🌌 Phase 11: Ecosystem & Extensibility
+
+### Task 11.1: Action Manager Extensibility
+- [ ] Polish support for `ir.actions.report` (PDF downloads).
+- [ ] Polish support for `ir.actions.client` (Custom Vue components).
+
+### Task 11.2: Widget Registry Plugin System
+- [ ] Document how third-party developers can inject custom Vue widgets (e.g., Map, Gantt, Chart) into the `componentRegistry` without modifying the core.
