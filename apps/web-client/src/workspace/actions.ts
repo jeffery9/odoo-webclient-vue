@@ -28,6 +28,7 @@ import {
   searchArch,
   searchPanelDomain,
   viewArchs,
+  activeModelFields,
   OdooViewType
 } from './state.js';
 
@@ -197,6 +198,7 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
 
     // Filter extracted field names against physically existing model fields from get_views schema metadata
     const modelFields = viewsResponse?.models?.[model]?.fields || {};
+    activeModelFields.value = modelFields;
     const fieldsToSelect = Array.from(fieldsSet).filter(f => !!modelFields[f]);
 
     // Guarantee fallback metadata field representation

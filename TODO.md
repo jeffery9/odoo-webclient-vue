@@ -109,20 +109,20 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ## 🎨 Phase 7: View Layout Semantic Alignment (Odoo UI/UX Fidelity)
 
 ### Task 7.1: `<header>` & `<statusbar>` Layouts
-- [ ] Render the statusflow bar at the top of Form views.
-- [ ] Parse `statusbar_visible` and compute active state highlighting.
-- [ ] Render functional stage transition buttons (e.g., "Confirm", "Draft").
+- [x] Render the statusflow bar at the top of Form views.
+- [x] Parse `statusbar_visible` and compute active state highlighting.
+- [x] Render functional stage transition buttons (e.g., "Confirm", "Draft").
 
 ### Task 7.2: `<sheet>` & `<group>` / `<col>` Responsive Grid
 - [x] Implement Odoo's classic dual-column or multi-column grid via CSS Grid.
 - [x] Ensure inner `<group>` tags align labels to the left and inputs to the right.
 - [x] Apply the `<sheet>` white-card shadow layout constraints.
 - [x] Deploy global mobile media queries (@media 768px) to auto-stack sidebars, control panel blocks, form grids, and App Switcher tiles on small viewports.
-- [ ] Correct Form field display layout split: Render both the semantic label (from XML string or ORM field name) and the reactive value/widget correctly, with pixel-perfect alignment inside `<group>` grid columns.
+- [x] Correct Form field display layout split: Render both the semantic label (from XML string or ORM field name) and the reactive value/widget correctly, with pixel-perfect alignment inside `<group>` grid columns.
 
 ### Task 7.3: `<notebook>` & `<page>` Tabs
-- [ ] Build responsive Tab view components to handle `<notebook>`.
-- [ ] Lazy-load or conditionally render `<page>` contents to optimize performance, especially for One2many/Many2many sub-lists.
+- [x] Build responsive Tab view components to handle `<notebook>`.
+- [x] Lazy-load or conditionally render `<page>` contents to optimize performance, especially for One2many/Many2many sub-lists.
 
 ### Task 7.4: Title, Avatar & Lists Semantics (per `list_view.rng`)
 - [ ] Implement layout rules for `oe_title` (large font headers) and `oe_avatar` (floating top-right image placeholders).

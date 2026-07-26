@@ -26,7 +26,8 @@ import {
   searchArch,
   searchPanelDomain,
   activeAction,
-  viewArchs
+  viewArchs,
+  activeModelFields
 } from './state.js';
 import { executeAction } from './actions.js';
 
@@ -203,15 +204,12 @@ export const MainWorkspace = {
           ) : null,
 
           // 5. Act Window - Form Rendering
-          !isConnecting.value && (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value === 'form' && selectedRecord.value ? h('div', { class: 'o_form_sheet_bg' }, [
-            h('div', { class: 'o_form_sheet' }, [
-              h(FormRenderer, {
-                arch: formArch.value,
-                record: selectedRecord.value,
-                readonly: readonlyMode.value
-              })
-            ])
-          ]) : null,
+          !isConnecting.value && (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value === 'form' && selectedRecord.value ? h(FormRenderer, {
+            arch: formArch.value,
+            record: selectedRecord.value,
+            fields: activeModelFields.value,
+            readonly: readonlyMode.value
+          }) : null,
 
           // 6. Act Window - Advanced View Rendering (graph, pivot, calendar, activity)
           !isConnecting.value &&

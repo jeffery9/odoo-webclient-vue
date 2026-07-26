@@ -1,4 +1,4 @@
-import { defineComponent, h, inject } from 'vue';
+import { defineComponent, h, inject, ref } from 'vue';
 import { Modifier, Expression } from '@odoo/sdk';
 import { componentRegistry, modelFieldRegistry } from './registry.js';
 import { ACTION_MANAGER_KEY } from './di.js';
@@ -176,24 +176,127 @@ export const CardRenderer = defineComponent({
   }
 });
 
+const OdooNotebook = defineComponent({
+  props: {
+    node: { type: Object, required: true },
+    renderNode: { type: Function, required: true }
+  },
+  setup(props) {
+    const activeIndex = ref(0);
+    return () => {
+      const pages = (props.node.children || []).filter((c: any) => c.tag === 'page');
+      if (pages.length === 0) return null;
+
+      // Render tab headers
+      const headers = pages.map((page: any, index: number) => {
+        const isActive = index === activeIndex.value;
+        const label = page.attrs?.string || `Tab ${index + 1}`;
+        
+        return h('li', {
+          style: `padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; border-bottom: 2px solid ${isActive ? '#714B67' : 'transparent'}; color: ${isActive ? '#714B67' : '#64748b'}; margin-right: 8px; transition: all 0.15s; list-style: none;`,
+          class: isActive ? 'active' : '',
+          onClick: () => { activeIndex.value = index; }
+        }, label);
+      });
+
+      const activePage = pages[activeIndex.value];
+      // Conditional lazy rendering of page content to optimize relational sub-views
+      const activePageContent = activePage ? props.renderNode(activePage) : null;
+
+      return h('div', { class: 'o_notebook', style: 'margin-top: 24px; display: flex; flex-direction: column; width: 100%;' }, [
+        h('ul', {
+          class: 'o_notebook_headers',
+          style: 'display: flex; list-style: none; margin: 0; padding: 0; border-bottom: 1px solid #dee2e6; flex-wrap: wrap;'
+        }, headers),
+        h('div', {
+          class: 'o_notebook_content',
+          style: 'padding: 16px 0; width: 100%; box-sizing: border-box;'
+        }, activePageContent)
+      ]);
+    };
+  }
+});
+
 export const FormRenderer = defineComponent({
   props: {
     arch: { type: Object, required: true },
-    record: { type: Object, required: true }
+    record: { type: Object, required: true },
+    fields: { type: Object, default: () => ({}) }
   },
   setup(props) {
+    const actionManager = inject(ACTION_MANAGER_KEY) as any;
+
     const renderNode = (node: any, isGrid = false): any => {
       if (!node) return null;
 
       if (node.tag === 'header') {
-        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
-        return h('div', { class: 'o_form_statusbar' }, children);
+        const children = node.children || [];
+        const buttonChildren = children.filter((c: any) => c.tag === 'button' || (c.tag === 'field' && c.attrs?.widget !== 'statusbar' && c.attrs?.name !== 'state'));
+        const statusbarChildren = children.filter((c: any) => c.tag === 'field' && (c.attrs?.widget === 'statusbar' || c.attrs?.name === 'state'));
+
+        const btnNodes = buttonChildren.map((c: any) => renderNode(c)).flat().filter(Boolean);
+        const statusNodes = statusbarChildren.map((c: any) => {
+          const name = c.attrs?.name;
+          const spec = {
+            attrs: c.attrs?.attrs,
+            readonly: c.attrs?.readonly,
+            invisible: c.attrs?.invisible,
+            required: c.attrs?.required,
+            states: c.attrs?.states
+          };
+          const compiled = Modifier.compile(spec);
+          const evaluated = Modifier.evaluate(compiled, props.record as any, {});
+          if (evaluated.invisible) return null;
+
+          const widgetComp = componentRegistry.get('statusbar');
+          return h(widgetComp, {
+            record: props.record,
+            name,
+            readonly: evaluated.readonly,
+            statusbar_visible: c.attrs?.statusbar_visible || '',
+            selection: props.fields?.[name]?.selection || []
+          });
+        }).flat().filter(Boolean);
+
+        return h('div', {
+          class: 'o_form_statusbar',
+          style: 'display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; background-color: #f8f9fa; padding: 6px 16px; min-height: 40px; width: 100%; box-sizing: border-box; flex-wrap: wrap; gap: 12px;'
+        }, [
+          h('div', { class: 'o_statusbar_buttons', style: 'display: flex; gap: 8px;' }, btnNodes),
+          h('div', { class: 'o_statusbar_status', style: 'display: flex; align-items: center; gap: 4px;' }, statusNodes)
+        ]);
+      }
+
+      if (node.tag === 'button') {
+        const stringVal = node.attrs?.string || node.attrs?.name || 'Button';
+        const type = node.attrs?.type || 'object';
+        const isPrimary = node.attrs?.class?.includes('oe_highlight') || node.attrs?.class?.includes('btn-primary');
+
+        return h('button', {
+          class: isPrimary ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm',
+          style: isPrimary 
+            ? 'background: #714B67; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; transition: opacity 0.15s;'
+            : 'background: white; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.15s;',
+          onClick: () => {
+            const name = node.attrs?.name;
+            if (actionManager) {
+              actionManager.doAction({
+                name: `Execute Button ${name}`,
+                type: 'ir.actions.client',
+                tag: 'execute_button',
+                params: { button_name: name, button_type: type }
+              });
+            } else {
+              alert(`Executing: ${name} (${type})`);
+            }
+          }
+        }, stringVal);
       }
 
       if (node.tag === 'sheet') {
         const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
-        return h('div', { class: 'o_form_sheet_bg' }, [
-          h('div', { class: 'o_form_sheet' }, children)
+        return h('div', { class: 'o_form_sheet_bg', style: 'padding: 16px; background-color: #f8fafc; border-radius: 8px; width: 100%; box-sizing: border-box;' }, [
+          h('div', { class: 'o_form_sheet', style: 'background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 24px; min-height: 400px; width: 100%; box-sizing: border-box;' }, children)
         ]);
       }
 
@@ -202,21 +305,17 @@ export const FormRenderer = defineComponent({
         const children = (node.children || []).map((c: any) => renderNode(c, !isOuter)).flat().filter(Boolean);
         return h('div', {
           class: isOuter ? 'o_group' : 'o_inner_group',
-          style: isOuter ? 'display: flex; gap: 24px; width: 100%;' : 'display: grid; grid-template-columns: minmax(120px, auto) 1fr; gap: 8px 16px; align-items: center; width: 100%; margin-bottom: 16px;'
+          style: isOuter ? 'display: flex; gap: 24px; width: 100%; flex-wrap: wrap;' : 'display: grid; grid-template-columns: minmax(120px, auto) 1fr; gap: 8px 16px; align-items: center; width: 100%; margin-bottom: 16px;'
         }, children);
       }
 
       if (node.tag === 'notebook') {
-        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
-        return h('div', { class: 'o_notebook', style: 'margin-top: 24px;' }, children);
+        return h(OdooNotebook, { node, renderNode });
       }
 
       if (node.tag === 'page') {
         const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
-        return h('div', { class: 'o_notebook_page', style: 'padding: 16px; border: 1px solid #e2e8f0; border-top: none;' }, [
-          h('h3', { style: 'margin-top: 0; font-size: 14px; font-weight: 600;' }, node.attrs?.string || 'Page'),
-          ...children
-        ]);
+        return h('div', { class: 'o_notebook_page', style: 'width: 100%;' }, children);
       }
 
       if (node.tag === 'div' && node.attrs?.class === 'oe_title') {
@@ -268,12 +367,13 @@ export const FormRenderer = defineComponent({
           required: evaluated.required,
           options: optionsObj,
           relation: node.attrs?.relation,
+          selection: props.fields?.[name]?.selection || [],
           subViews: node.children || [],
           class: evaluated.required ? 'o_required_modifier' : ''
         });
 
         if (isGrid && !node.attrs?.nolabel && node.attrs?.nolabel !== '1') {
-          const labelString = node.attrs?.string || name;
+          const labelString = node.attrs?.string || props.fields?.[name]?.string || name;
           const labelVnode = h('label', { class: 'o_form_label', style: 'font-weight: 600; color: #475569; font-size: 13px;' }, labelString);
           return [labelVnode, fieldVnode];
         }
@@ -297,7 +397,7 @@ export const FormRenderer = defineComponent({
 
     return () => {
       const rootChildren = (props.arch?.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
-      return h('div', { class: 'o_form_view' }, rootChildren);
+      return h('div', { class: 'o_form_view', style: 'display: flex; flex-direction: column; width: 100%; box-sizing: border-box; overflow-y: auto; height: 100%;' }, rootChildren);
     };
   }
 });

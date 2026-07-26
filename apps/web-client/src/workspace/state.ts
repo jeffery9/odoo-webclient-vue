@@ -31,6 +31,7 @@ export const searchQuery = ref('');
 
 // Dynamic metadata-driven arch store for all standard Odoo view types
 export const viewArchs = ref<Record<string, any>>({});
+export const activeModelFields = ref<Record<string, any>>({});
 
 export const listArch = computed(() => viewArchs.value.list || { type: 'list', children: [] });
 export const formArch = computed(() => viewArchs.value.form || { type: 'form', children: [] });
