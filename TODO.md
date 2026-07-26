@@ -386,3 +386,12 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [ ] Implement native drag-and-drop file attachment uploads integrated directly within the `oe_chatter` notes box and discuss editor.
 - [ ] Support uploading blobs dynamically via the standard Odoo ORM `create` endpoint mapping to the `ir.attachment` model, showing inline progress indicators and file type icons.
 
+### Task 22.5: QWeb WYSIWYG HTML Template Editor Widget (`FieldHtml` / `widget="html"`)
+- [ ] Build a standard, rich-text/WYSIWYG HTML template editor widget (`FieldHtml`) inside the `@odoo/vue-runtime` widget registry.
+- [ ] Support dynamic placeholder insertion (e.g. `${object.partner_id.name}` or modern Jinja-like Odoo syntax) dynamically populated from the active model's fields, allowing administrators to visually design Email Templates (`mail.template`).
+- [ ] Implement robust HTML sanitization and entity encoding to ensure standard-compliant document structures before ORM commit.
+
+### Task 22.6: Dynamic QWeb Live Previewer & Code View Toggle
+- [ ] Implement a dual-mode Editor view allowing advanced users to toggle between visual WYSIWYG editing and raw QWeb/HTML code views.
+- [ ] Integrate our local AOT `QWebCompiler` to compile the active editor's HTML/QWeb template code against the current `RecordProxy` state in real-time, displaying a pixel-perfect, side-by-side live email/report preview before saving.
+
