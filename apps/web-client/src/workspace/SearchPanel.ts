@@ -1,5 +1,6 @@
 import { h, ref, watch, onMounted } from 'vue';
 import { activeClient } from '../auth/state.js';
+import { activeContext } from './state.js';
 
 const FIELD_RELATIONS: Record<string, string> = {
   category_id: 'res.partner.category',
@@ -38,7 +39,10 @@ export const SearchPanel = {
             const records = await activeClient.value.search_read(
               relationModel,
               [],
-              ['name']
+              ['name'],
+              undefined,
+              undefined,
+              activeContext.value
             );
             fieldOptions.value[name] = records.map((r: any) => ({
               id: r.id,
