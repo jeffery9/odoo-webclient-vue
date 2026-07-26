@@ -10,8 +10,8 @@ The project is structured as an NPM workspaces Monorepo. Make sure you have **No
 
 ```bash
 # Clone the repository (if not already done)
-git clone https://github.com/your-username/odoo-client-sdk.git
-cd odoo-client-sdk
+git clone https://github.com/jeffery9/odoo-webclient-vue.git
+cd odoo-webclient-vue
 
 # Install dependencies and link workspace packages
 npm install
