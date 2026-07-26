@@ -98,6 +98,11 @@ We decouple Odoo field-rendering logic from any rigid presentation layer using a
 3.  **Zero-DOM Reactivity**: Modifying field values inside widgets is performed exclusively through the reactive `RecordProxy.set(name, value)` method, automatically triggering downstream dependencies, modifer evaluations, and backend onchanges without manual DOM manipulation.
 4.  **Strict Style Alignment**: When integrating Vue community/third-party components (such as Element Plus, ECharts, VuePivottable, or date pickers), their visual styling, themes, border-radius, and typography MUST be customized to align seamlessly with Odoo's corporate branding (e.g., Primary Purple `#714B67`, Secondary Teal `#01A299`, light gray borders `#e2e8f0`) and the global aesthetics of the `web-client`. Custom CSS variables or scoped style overrides should be applied to completely eliminate mismatched default styling.
 
+### E. Semantic Purity & Legacy Drift Isolation (The Supreme Principle)
+During Odoo's 20+ years of rapid, multi-generational evolution (from OpenERP through OWL transition), legacy compatibility compromises and framework migrations have inevitably led to entangled, compromised, or drifted client-side semantic behaviors. 
+1.  **Treat Drift as Anomaly, Not Norm**: We explicitly refuse to normalize or hardcode legacy architectural drifts into our core SDK logic. The SDK's AST compilers, context evaluations, and communication pipelines must represent **pure, elegant, and standard Odoo Client Semantics** in their highest architectural form.
+2.  **Encapsulated Exception Boundaries**: Any necessary workaround to support legacy Odoo server quirks or "compromised" view syntax must be strictly isolated inside dedicated **Compatibility Adapters** or encapsulated **Exception Handlers** with explicit developer logging, keeping the main core SDK runtime pure, traceable, and pristine.
+
 ---
 
 ## 4. Environment & Command Pipeline
