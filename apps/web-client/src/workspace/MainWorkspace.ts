@@ -43,6 +43,14 @@ export const MainWorkspace = {
       }
     };
 
+    const handleDrillDown = async (drillDownDomain: any[]) => {
+      searchPanelDomain.value = [...searchPanelDomain.value, ...drillDownDomain];
+      activeViewType.value = 'list';
+      if (activeAction.value) {
+        await executeAction(activeAction.value.id, { resetOffset: true });
+      }
+    };
+
     const hasSearchPanel = () => {
       if (!searchArch.value || searchArch.value.tag !== 'search') return false;
       return searchArch.value.children?.some((c: any) => c.tag === 'searchpanel');
@@ -196,13 +204,15 @@ export const MainWorkspace = {
             // Render Graph view
             activeViewType.value === 'graph' ? h(rendererRegistry.has('graph') ? rendererRegistry.get('graph') : GraphRenderer, {
               arch: viewArchs.value.graph,
-              records: filteredRecords.value
+              records: filteredRecords.value,
+              onDrillDown: handleDrillDown
             }) : null,
 
             // Render Pivot view
             activeViewType.value === 'pivot' ? h(rendererRegistry.has('pivot') ? rendererRegistry.get('pivot') : PivotRenderer, {
               arch: viewArchs.value.pivot,
-              records: filteredRecords.value
+              records: filteredRecords.value,
+              onDrillDown: handleDrillDown
             }) : null,
 
             // Render Calendar view

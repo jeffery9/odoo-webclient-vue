@@ -21,9 +21,10 @@ export const PremiumGraphRenderer = defineComponent({
   name: 'PremiumGraphRenderer',
   props: {
     arch: { type: Object, required: true },
-    records: { type: Array, required: true }
+    records: { type: Array, required: true },
+    onDrillDown: { type: Function, required: false }
   },
-  setup(props: { arch: any, records: any[] }) {
+  setup(props: { arch: any, records: any[], onDrillDown?: (domain: any[]) => void }) {
     const chartOption = computed(() => {
       const fieldNodes = (props.arch?.children || []).filter((c: any) => c.tag === 'field');
       const rowNode = fieldNodes.find((c: any) => c.attrs?.type === 'row') || fieldNodes[0];
@@ -93,7 +94,18 @@ export const PremiumGraphRenderer = defineComponent({
     }, [
       h(VChart, {
         option: chartOption.value,
-        style: 'height: 400px; width: 100%;'
+        style: 'height: 400px; width: 100%; cursor: pointer;',
+        onClick: (params: any) => {
+          if (props.onDrillDown) {
+            const fieldNodes = (props.arch?.children || []).filter((c: any) => c.tag === 'field');
+            const rowNode = fieldNodes.find((c: any) => c.attrs?.type === 'row') || fieldNodes[0];
+            const rowFieldName = rowNode?.attrs?.name || 'name';
+            const domain = rowFieldName.endsWith('_id') 
+              ? [[rowFieldName, 'ilike', params.name]] 
+              : [[rowFieldName, '=', params.name]];
+            props.onDrillDown(domain);
+          }
+        }
       })
     ]);
   }
