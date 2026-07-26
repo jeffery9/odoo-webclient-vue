@@ -101,6 +101,21 @@ export class RPCClient {
   }
 
   // High-Level ORM Helper Methods
+  async loadMenus(): Promise<any> {
+    return this.request('/web/webclient/load_menus', { hash: '' });
+  }
+
+  async loadAction(actionId: number): Promise<any> {
+    return this.request('/web/action/load', { action_id: actionId });
+  }
+
+  async loadViews(model: string, views: [number | boolean, string][], options?: any): Promise<any> {
+    return this.call(model, 'load_views', [[]], {
+      views,
+      options: options || {}
+    });
+  }
+
   async read(model: string, ids: number[], fields?: string[]): Promise<any[]> {
     return this.call(model, 'read', [ids], { fields });
   }
