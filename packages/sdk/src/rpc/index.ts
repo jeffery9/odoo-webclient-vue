@@ -1,1 +1,1 @@
-export const placeholderRPC = true;
+export * from './client.js';

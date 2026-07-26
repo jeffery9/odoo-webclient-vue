@@ -36,11 +36,11 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ## 📡 Phase 2: Runtime Infrastructure (Communication & State)
 
 ### Task 2.1: RPC Runtime
-- [ ] Implement the HTTP JSON-RPC Client (`packages/sdk/src/rpc/client.ts`).
-- [ ] Handle session cookie injection, CSRF tokens, and custom HTTP header pooling.
-- [ ] Implement ORM endpoints: `call_kw`, `search_read`, `read`, `write`, `create`, `unlink`.
-- [ ] Implement error parser translating server stack traces into strict typed client-side JS Exceptions (`OdooAccessError`, `OdooValidationError`).
-- [ ] Write Vitest mocks verifying RPC request mapping and exception propagation.
+- [x] Implement the HTTP JSON-RPC Client (`packages/sdk/src/rpc/client.ts`).
+- [x] Handle session cookie injection, CSRF tokens, and custom HTTP header pooling.
+- [x] Implement ORM endpoints: `call_kw`, `search_read`, `read`, `write`, `create`, `unlink`.
+- [x] Implement error parser translating server stack traces into strict typed client-side JS Exceptions (`OdooAccessError`, `OdooValidationError`).
+- [x] Write Vitest mocks verifying RPC request mapping and exception propagation.
 
 ### Task 2.2: Session Runtime
 - [ ] Create session state tracker managing `uid`, user company profiles, currency listings, and active contextual attributes.
