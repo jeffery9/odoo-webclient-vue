@@ -14,7 +14,15 @@ import {
   FieldDatetime,
   FieldMany2one,
   FieldOne2many,
-  FieldMany2many
+  FieldMany2many,
+  FieldUrl,
+  FieldEmail,
+  FieldPhone,
+  FieldBadge,
+  FieldProgressBar,
+  FieldPriority,
+  FieldImage,
+  FieldHandle
 } from './widgets.js';
 import { RecordProxy } from '@odoo/sdk';
 import { ListRenderer, CardRenderer } from './renderers.js';
@@ -34,6 +42,14 @@ describe('Odoo Vue Base UI Widgets', () => {
   componentRegistry.add('many2one', FieldMany2one);
   componentRegistry.add('one2many', FieldOne2many);
   componentRegistry.add('many2many', FieldMany2many);
+  componentRegistry.add('url', FieldUrl);
+  componentRegistry.add('email', FieldEmail);
+  componentRegistry.add('phone', FieldPhone);
+  componentRegistry.add('badge', FieldBadge);
+  componentRegistry.add('progressbar', FieldProgressBar);
+  componentRegistry.add('priority', FieldPriority);
+  componentRegistry.add('image', FieldImage);
+  componentRegistry.add('handle', FieldHandle);
 
   test('should compile and register FieldChar input widget', () => {
     const record = new RecordProxy('res.partner', { name: 'Mitchell Admin' });
@@ -261,5 +277,68 @@ describe('Odoo Vue Base UI Widgets', () => {
     expect(o2mVnode.type).toBe(ListRenderer);
     expect(o2mVnode.props.arch).toBe(defaultListArch);
     expect(o2mVnode.props.arch.children[0].attrs.name).toBe('qty');
+  });
+
+  test('should render new specialized widgets correctly', () => {
+    const record = new RecordProxy('res.partner', {
+      website: 'https://odoo.com',
+      email_addr: 'test@odoo.com',
+      mobile: '+12345678',
+      status: 'active',
+      progress: 75,
+      stars: 3,
+      avatar: 'data:image/png;base64,mock',
+      sequence: 1
+    });
+
+    // 1. URL
+    const urlWidget = componentRegistry.get('url') as any;
+    const urlVnode = urlWidget.setup({ record, name: 'website', readonly: true }, {})();
+    expect(urlVnode.type).toBe('a');
+    expect(urlVnode.props.href).toBe('https://odoo.com');
+
+    // 2. Email
+    const emailWidget = componentRegistry.get('email') as any;
+    const emailVnode = emailWidget.setup({ record, name: 'email_addr', readonly: true }, {})();
+    expect(emailVnode.type).toBe('a');
+    expect(emailVnode.props.href).toBe('mailto:test@odoo.com');
+
+    // 3. Phone
+    const phoneWidget = componentRegistry.get('phone') as any;
+    const phoneVnode = phoneWidget.setup({ record, name: 'mobile', readonly: true }, {})();
+    expect(phoneVnode.type).toBe('a');
+    expect(phoneVnode.props.href).toBe('tel:+12345678');
+
+    // 4. Badge
+    const badgeWidget = componentRegistry.get('badge') as any;
+    const badgeVnode = badgeWidget.setup({ record, name: 'status', readonly: true }, {})();
+    expect(badgeVnode.type).toBe('span');
+    expect(badgeVnode.props.class).toBe('o_badge');
+
+    // 5. Progressbar
+    const progressWidget = componentRegistry.get('progressbar') as any;
+    const progressVnode = progressWidget.setup({ record, name: 'progress', readonly: true }, {})();
+    expect(progressVnode.type).toBe('div');
+    expect(progressVnode.children[0].props.style).toContain('width: 75%');
+
+    // 6. Priority
+    const priorityWidget = componentRegistry.get('priority') as any;
+    const priorityVnode = priorityWidget.setup({ record, name: 'stars', readonly: false }, {})();
+    expect(priorityVnode.children.length).toBe(5);
+    // Click 4th star to set priority to 4
+    priorityVnode.children[3].props.onClick();
+    expect(record.get('stars')).toBe(4);
+
+    // 7. Image
+    const imageWidget = componentRegistry.get('image') as any;
+    const imageVnode = imageWidget.setup({ record, name: 'avatar', readonly: true }, {})();
+    expect(imageVnode.type).toBe('img');
+    expect(imageVnode.props.src).toBe('data:image/png;base64,mock');
+
+    // 8. Handle
+    const handleWidget = componentRegistry.get('handle') as any;
+    const handleVnode = handleWidget.setup({ record, name: 'sequence', readonly: true }, {})();
+    expect(handleVnode.type).toBe('span');
+    expect(handleVnode.children).toBe('☰');
   });
 });

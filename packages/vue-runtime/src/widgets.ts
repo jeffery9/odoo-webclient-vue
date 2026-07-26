@@ -364,3 +364,202 @@ export const FieldMany2many = defineComponent({
     };
   }
 });
+
+export const FieldUrl = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const strVal = val !== null && val !== undefined ? String(val) : '';
+
+      if (props.readonly) {
+        return h('a', { class: 'o_field_url o_readonly', href: strVal, target: '_blank', style: 'color: #00878a; text-decoration: underline;' }, strVal);
+      }
+
+      return h('input', {
+        class: 'o_field_url',
+        value: strVal,
+        onInput: (e: any) => props.record?.set(props.name, e.target.value)
+      });
+    };
+  }
+});
+
+export const FieldEmail = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const strVal = val !== null && val !== undefined ? String(val) : '';
+
+      if (props.readonly) {
+        return h('a', { class: 'o_field_email o_readonly', href: 'mailto:' + strVal, style: 'color: #00878a; text-decoration: underline;' }, strVal);
+      }
+
+      return h('input', {
+        type: 'email',
+        class: 'o_field_email',
+        value: strVal,
+        onInput: (e: any) => props.record?.set(props.name, e.target.value)
+      });
+    };
+  }
+});
+
+export const FieldPhone = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const strVal = val !== null && val !== undefined ? String(val) : '';
+
+      if (props.readonly) {
+        return h('a', { class: 'o_field_phone o_readonly', href: 'tel:' + strVal, style: 'color: #00878a; text-decoration: underline;' }, strVal);
+      }
+
+      return h('input', {
+        type: 'tel',
+        class: 'o_field_phone',
+        value: strVal,
+        onInput: (e: any) => props.record?.set(props.name, e.target.value)
+      });
+    };
+  }
+});
+
+export const FieldBadge = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const strVal = val !== null && val !== undefined ? String(val) : '';
+
+      return h('span', {
+        class: 'o_badge',
+        style: 'display: inline-block; padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 12px; background-color: #e2e8f0; color: #475569;'
+      }, strVal);
+    };
+  }
+});
+
+export const FieldProgressBar = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const percent = Math.min(100, Math.max(0, Number(val) || 0));
+
+      return h('div', {
+        class: 'o_progress_bar_container',
+        style: 'width: 100%; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; display: flex; align-items: center;'
+      }, [
+        h('div', {
+          class: 'o_progress_bar',
+          style: `width: ${percent}%; background-color: #00878a; color: white; text-align: center; font-size: 10px; padding: 2px 0; transition: width 0.3s ease;`
+        }, `${percent}%`)
+      ]);
+    };
+  }
+});
+
+export const FieldPriority = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const rating = Math.min(5, Math.max(0, Math.round(Number(val) || 0)));
+
+      const stars = Array.from({ length: 5 }, (_, i) => {
+        const active = i < rating;
+        return h('span', {
+          style: `cursor: ${props.readonly ? 'default' : 'pointer'}; font-size: 16px; color: ${active ? '#f59e0b' : '#cbd5e1'}; margin-right: 2px;`,
+          onClick: () => {
+            if (!props.readonly) {
+              props.record?.set(props.name, i + 1);
+            }
+          }
+        }, active ? '★' : '☆');
+      });
+
+      return h('div', { class: 'o_priority' }, stars);
+    };
+  }
+});
+
+export const FieldImage = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      const val = props.record?.get(props.name);
+      const strVal = val !== null && val !== undefined ? String(val) : '';
+      const srcVal = strVal || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="100%" height="100%" fill="%23f1f5f9"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="10" fill="%2394a3b8">Image</text></svg>';
+
+      if (props.readonly) {
+        return h('img', { class: 'o_field_image o_readonly', src: srcVal, style: 'max-width: 64px; max-height: 64px; border-radius: 4px; object-fit: cover; border: 1px solid #e2e8f0;' });
+      }
+
+      return h('div', { class: 'o_field_image_container', style: 'display: flex; flex-direction: column; gap: 4px;' }, [
+        h('img', { src: srcVal, style: 'max-width: 64px; max-height: 64px; border-radius: 4px; object-fit: cover; border: 1px solid #e2e8f0;' }),
+        h('input', {
+          type: 'file',
+          accept: 'image/*',
+          style: 'font-size: 10px; width: 120px;',
+          onChange: (e: any) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (event: any) => {
+                props.record?.set(props.name, event.target.result);
+              };
+              reader.readAsDataURL(file);
+            }
+          }
+        })
+      ]);
+    };
+  }
+});
+
+export const FieldHandle = defineComponent({
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    return () => {
+      return h('span', {
+        class: 'o_row_handle',
+        style: 'cursor: grab; display: inline-block; padding: 4px; color: #94a3b8; font-size: 14px;'
+      }, '☰');
+    };
+  }
+});
