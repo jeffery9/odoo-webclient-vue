@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "paths": {
+      "@odoo/sdk": ["./packages/sdk/src/index.ts"],
+      "@odoo/vue-runtime": ["./packages/vue-runtime/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

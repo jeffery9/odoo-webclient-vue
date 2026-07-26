@@ -1,0 +1,17 @@
+{
+  "name": "web-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@odoo/sdk": "^0.1.0",
+    "@odoo/vue-runtime": "^0.1.0",
+    "vue": "^3.4.35"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

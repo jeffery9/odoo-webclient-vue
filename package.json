@@ -1,0 +1,20 @@
+{
+  "name": "odoo-client-sdk-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint \"packages/**/*.{ts,vue}\" \"apps/**/*.{ts,vue}\""
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5",
+    "eslint": "^9.8.0",
+    "prettier": "^3.3.3"
+  }
+}
