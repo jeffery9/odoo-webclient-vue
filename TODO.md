@@ -21,9 +21,9 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Write Vitest test suite verifying context merge priorities and expression evaluation.
 
 ### Task 1.3: Modifier DSL Compiler
-- [ ] Implement `Modifier.compile(attrs: Record<string, any>)` that wraps target rules into evaluated functions.
-- [ ] Implement `Modifier.evaluate(compiledModifiers, record)` returning reactive boolean statuses: `invisible`, `readonly`, `required`.
-- [ ] Write Vitest test suite for compiling Odoo `attrs` and testing active record states.
+- [x] Implement `Modifier.compile(attrs: Record<string, any>)` that wraps target rules into evaluated functions.
+- [x] Implement `Modifier.evaluate(compiledModifiers, record)` returning reactive boolean statuses: `invisible`, `readonly`, `required`.
+- [x] Write Vitest test suite for compiling Odoo `attrs` and testing active record states.
 
 ### Task 1.4: XML Arch & QWeb Compiler
 - [ ] Install `fast-xml-parser` as a workspace dependency.

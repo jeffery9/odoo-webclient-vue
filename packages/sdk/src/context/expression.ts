@@ -48,6 +48,9 @@ export class Expression {
         }
         return result;
       }
+      case 'array': {
+        return node.elements.map(el => this.evaluate(el, env));
+      }
     }
   }
 
@@ -74,7 +77,7 @@ export class Expression {
         continue;
       }
 
-      if (['{', '}', ':', ',', '(', ')'].includes(char)) {
+      if (['{', '}', ':', ',', '(', ')', '[', ']'].includes(char)) {
         tokens.push(char);
         i++;
         continue;
@@ -158,6 +161,14 @@ class ExprParser {
       return this.parseDictionary();
     }
 
+    if (token === '[') {
+      return this.parseArray();
+    }
+
+    if (token === '(') {
+      return this.parseTupleOrParentheses();
+    }
+
     this.consume();
 
     if ((token.startsWith("'") && token.endsWith("'")) || (token.startsWith('"') && token.endsWith('"'))) {
@@ -206,5 +217,41 @@ class ExprParser {
     }
 
     return { type: 'dictionary', properties };
+  }
+
+  private parseArray(): ExprNode {
+    this.consume(); // skip '['
+    const elements: ExprNode[] = [];
+    while (this.peek() && this.peek() !== ']') {
+      elements.push(this.parseExpression());
+      if (this.peek() === ',') {
+        this.consume();
+      }
+    }
+    const close = this.consume(); // skip ']'
+    if (close !== ']') throw new Error(`Expected ']' to close array`);
+    return { type: 'array', elements };
+  }
+
+  private parseTupleOrParentheses(): ExprNode {
+    this.consume(); // skip '('
+    const first = this.parseExpression();
+    if (this.peek() === ')') {
+      this.consume(); // skip ')'
+      return first; // parenthesized expression
+    }
+
+    const elements: ExprNode[] = [first];
+    while (this.peek() && this.peek() !== ')') {
+      if (this.peek() === ',') {
+        this.consume();
+      }
+      if (this.peek() !== ')') {
+        elements.push(this.parseExpression());
+      }
+    }
+    const close = this.consume(); // skip ')'
+    if (close !== ')') throw new Error(`Expected ')' to close tuple`);
+    return { type: 'array', elements };
   }
 }
