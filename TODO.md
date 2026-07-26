@@ -345,3 +345,20 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ### Task 21.4: Context Propagation Pollution (`active_id` vs `active_ids`)
 - **Odoo Drift**: Odoo's backend action execution relies heavily on `active_id` and `active_ids` in the context. Over years of development, standard Odoo buttons and window actions inconsistently evaluate whether to pass a single ID or an array, often leading to backend Python `TypeError`s if a model expects `active_ids` but only receives `active_id`.
 - **SDK Remediation**: Implement a Context Sanitizer in the `ActionManager`. When dispatching actions, automatically normalize `active_id` and `active_ids` to ensure both are present and correctly typed (array vs int) based on the current `RecordProxy` state, shielding the backend from its own ambiguity.
+
+### Task 21.5: Global Services Registry Pollution (`env.services` coupling)
+- **Odoo Drift**: Odoo 19's OWL client tightly couples components to a global `env.services` namespace (e.g. notifications, RPC, actions). This prevents standard Dependency Injection (DI), blocks clean isolated component testing, and prevents runtimes from being cleanly embedded in third-party micro-frontends.
+- **SDK Remediation**: Enforce a strict Dependency Injection (DI) bus via standard framework primitives (e.g. Vue `provide`/`inject` or React context) mapping client services to local DI boundaries instead of relying on any global window-level pollution.
+
+### Task 21.6: WebBus / Longpolling Coupled Domain Handlers
+- **Odoo Drift**: Odoo's live notification bus is deeply entangled with mail/discuss schemas. Removing or unlinking the standard discuss/chatter mail modules often results in client-side runtime compilation crashes as the JS bus client fails to dynamically resolve discuss-specific channel listeners.
+- **SDK Remediation**: Enforce a pure, generic WebSocket client (`OdooBusClient`) in `@odoo/sdk` that is completely decoupled from any business schema, dispatching standard topic events to registered observers without hardcoded mail model expectations.
+
+### Task 21.7: Dynamic Asset Bundling CSS/JS Pollution (`/web/assets` bundle loading)
+- **Odoo Drift**: The Odoo backend dynamically bundles and injects compiled script/style tags into the browser DOM at runtime based on active database modules. This results in global namespace collisions, unmanageable CSS stylesheet cascades, and memory leaks.
+- **SDK Remediation**: Establish a rigid, client-controlled modular asset pipeline. All style variables and layout components must be compiled Ahead-Of-Time (AOT) and scoped to the host workspace application, isolating external asset injections inside isolated Shadow DOM boundaries or scoped namespaces.
+
+### Task 21.8: Localized Currency/Float Cache Drifts (Locale String Pollution)
+- **Odoo Drift**: Odoo 19 widgets often format floats based on active user locales (e.g. `1.000,50` vs `1,000.50`) and cache these formatted strings directly in the active record transactional dictionary, resulting in downstream float-to-string write exceptions during database RPC updates.
+- **SDK Remediation**: Enforce a strict separation of presentation and transactional values. The active `RecordProxy` must strictly store pure JavaScript types (`Number`, `Date`, `Boolean`) inside its transactional cache, while localized formatting utilities format values on-demand only at the visual renderer border.
+
