@@ -248,6 +248,13 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ### Task 14.2: Dynamic Translation Catalog Injection & PO Parsing
 - [ ] Support loading PO/JSON dynamic translation catalogs from Odoo translation endpoints, auto-localizing compiled JSON view titles, menu items, and field strings dynamically at the rendering layer.
 
+### Task 14.3: Dynamic Client-Side View Arch Composition & Fallback Priority Resolution
+- [ ] Implement three-tier dynamic view resolution priority for x2many relational sub-views inside the rendering engine:
+  - Priority 1: Check and parse the parent Form's Inline Arch (nested `<tree>` or `<form>` nodes).
+  - Priority 2: Query the related model's default List/Form views dynamically via backend `get_views` if Inline Arch is absent.
+  - Priority 3: Fall back to auto-generating a standard hardcoded view metadata block (containing `id` and `display_name`) if both are unavailable.
+- [ ] Implement runtime attribute composition merging, combining parent state evaluations with local active modifier context streams.
+
 ---
 
 ## ⚙️ Phase 15: Cross-View Direct Interactions & Server-Side Feedback
