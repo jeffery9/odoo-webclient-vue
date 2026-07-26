@@ -86,6 +86,11 @@ Odoo's Custom DSLs are compiled to a standard, framework-agnostic **Semantic IR*
 *   **Reactive ORM**: State tracking is delegated directly to the rendering framework's reactivity core (e.g. Pinia, reactive primitives). No heavy, redundant custom model dirty-trackers.
 *   **Dependency Injection (DI)**: SDK services (notifications, dialogs, router) are mapped to standard DI mechanics (such as Vue `provide()` / `inject()`), ensuring clean architectural boundaries.
 
+### C. Application Separation & Metadata-Driven Semantics
+*   **Separation of Tests**: All app modules (such as `apps/web-client`) must physically separate test suites from production source code. Production source code belongs strictly under the `src/` directory, while all unit, integration, and E2E tests belong in a dedicated sibling `tests/` directory to prevent compilation and build layout contamination.
+*   **Zero Hardcoded Demo Data**: Production source files are strictly metadata-driven and must contain no hardcoded mockup lists or demo records. Relational widgets (e.g. Odoo `<searchpanel>` fields like `category_id` or `user_id`) must resolve their options dynamically from the active Odoo database via ORM `search_read` pipelines, falling back to empty state representations if unconnected, while retaining test mock data strictly in test files under `tests/`.
+*   **On-Demand Sidebar SearchPanel**: SearchPanel filters must strictly be rendered on-demand. The layout checks the compiled XML AST of the active action's search view (`searchArch`), mounting and displaying the sidebar filters if and only if a `<searchpanel>` node is explicitly declared.
+
 ---
 
 ## 4. Environment & Command Pipeline
