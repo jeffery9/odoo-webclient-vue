@@ -359,7 +359,7 @@ describe('Odoo Vue Base UI Widgets', () => {
     const tagWidget = componentRegistry.get('tag') as any;
     const tagVnode = tagWidget.setup({ record, name: 'tag_ids', readonly: true }, {})();
     expect(tagVnode.type).toBe('div');
-    expect(tagVnode.props.class).toBe('o_field_tags');
+    expect(tagVnode.props.class).toBe('o_field_tags o_readonly');
     expect(tagVnode.children.length).toBe(2);
     expect(tagVnode.children[0].children).toBe('Consulting');
     expect(tagVnode.children[1].children).toBe('VIP');

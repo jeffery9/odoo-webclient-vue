@@ -564,26 +564,206 @@ export const FieldHandle = defineComponent({
   }
 });
 
+const TAG_COLORS = [
+  { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' }, // Red
+  { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' }, // Blue
+  { bg: '#dcfce7', text: '#166534', border: '#86efac' }, // Green
+  { bg: '#fef9c3', text: '#854d0e', border: '#fde047' }, // Yellow
+  { bg: '#ffedd5', text: '#9a3412', border: '#fdba74' }, // Orange
+  { bg: '#f3e8ff', text: '#6b21a8', border: '#d8b4fe' }, // Purple
+  { bg: '#ccfbf1', text: '#115e59', border: '#5eead4' }, // Teal
+  { bg: '#fce7f3', text: '#9d174d', border: '#fbcfe8' }, // Pink
+  { bg: '#f1f5f9', text: '#334155', border: '#cbd5e1' }, // Slate
+  { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' }, // Indigo
+];
+
 export const FieldTag = defineComponent({
   props: {
     record: { type: Object, required: true },
     name: { type: String, required: true },
-    readonly: { type: Boolean, default: false }
+    readonly: { type: Boolean, default: false },
+    relation: { type: String, default: '' }
   },
   setup(props) {
-    return () => {
-      const val = props.record?.get(props.name);
-      const list = Array.isArray(val) ? val : (val !== null && val !== undefined ? [val] : []);
+    const inputVal = ref('');
+    const showDropdown = ref(false);
+    const containerRef = ref<HTMLElement | null>(null);
 
-      const pills = list.map((item: any) => {
-        const label = Array.isArray(item) ? item[1] : String(item.display_name || item.name || item);
-        return h('span', {
-          class: 'o_tag_badge',
-          style: 'display: inline-block; padding: 2px 8px; margin-right: 4px; margin-bottom: 4px; font-size: 11px; border-radius: 4px; background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;'
-        }, label);
+    const tagSuggestions = [
+      'VIP Customer',
+      'Services',
+      'Consulting',
+      'Internal',
+      'Supplier',
+      'SaaS Partner',
+      'Odoo Expert',
+    ];
+
+    const getColor = (rec: any) => {
+      const id = rec?.id || (rec?.get ? rec.get('id') : null) || (Array.isArray(rec) ? rec[0] : 0) || 0;
+      return TAG_COLORS[id % TAG_COLORS.length];
+    };
+
+    const removeTag = (recToRemove: any, e: Event) => {
+      e.stopPropagation();
+      const val = props.record?.get(props.name) || [];
+      const childRecords = Array.isArray(val) ? val : [];
+      const updated = childRecords.filter((rec: any) => {
+        const thisId = rec?.get ? rec.get('id') : (Array.isArray(rec) ? rec[0] : rec?.id);
+        const removeId = recToRemove?.get ? recToRemove.get('id') : (Array.isArray(recToRemove) ? recToRemove[0] : recToRemove?.id);
+        return thisId !== removeId;
       });
+      props.record?.set(props.name, updated);
+    };
 
-      return h('div', { class: 'o_field_tags' }, pills);
+    const addTag = (tagName: string) => {
+      const val = props.record?.get(props.name) || [];
+      const childRecords = Array.isArray(val) ? val : [];
+      
+      const exists = childRecords.some((rec: any) => {
+        const nameVal = rec?.get 
+          ? rec.get('display_name') || rec.get('name') 
+          : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
+        return String(nameVal).toLowerCase() === tagName.toLowerCase();
+      });
+      if (exists) return;
+
+      const newTag = {
+        id: Math.floor(Math.random() * 100000) + 1,
+        display_name: tagName,
+        name: tagName
+      };
+
+      props.record?.set(props.name, [...childRecords, newTag]);
+    };
+
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && inputVal.value.trim()) {
+        e.preventDefault();
+        addTag(inputVal.value.trim());
+        inputVal.value = '';
+        showDropdown.value = false;
+      }
+    };
+
+    const selectSuggestion = (sug: string, e: Event) => {
+      e.stopPropagation();
+      addTag(sug);
+      inputVal.value = '';
+      showDropdown.value = false;
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.value && !containerRef.value.contains(e.target as Node)) {
+        showDropdown.value = false;
+      }
+    };
+
+    const hasInstance = getCurrentInstance();
+    if (hasInstance) {
+      onMounted(() => {
+        window.addEventListener('click', handleClickOutside);
+      });
+      onUnmounted(() => {
+        window.removeEventListener('click', handleClickOutside);
+      });
+    }
+
+    return () => {
+      const val = props.record?.get(props.name) || [];
+      const childRecords = Array.isArray(val) ? val : [];
+
+      if (props.readonly) {
+        return h('div', {
+          class: 'o_field_tags o_readonly',
+          style: 'display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0;'
+        }, childRecords.map((rec: any) => {
+          const nameVal = rec?.get 
+            ? rec.get('display_name') || rec.get('name') 
+            : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
+          const color = getColor(rec);
+          return h('span', {
+            class: 'o_tag_pill',
+            style: `background: ${color.bg}; color: ${color.text}; border: 1px solid ${color.border}; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 500;`
+          }, String(nameVal));
+        }));
+      }
+
+      return h('div', {
+        ref: containerRef,
+        class: 'o_field_tags o_field_widget',
+        style: 'position: relative; display: flex; flex-direction: column; width: 100%;'
+      }, [
+        h('div', {
+          class: 'o_tag_container',
+          style: 'display: flex; flex-wrap: wrap; gap: 4px; border: 1px solid #ccc; padding: 4px; border-radius: 4px; background: white; min-height: 34px; align-items: center; cursor: text;',
+          onClick: () => { showDropdown.value = true; }
+        }, [
+          childRecords.map((rec: any) => {
+            const nameVal = rec?.get 
+              ? rec.get('display_name') || rec.get('name') 
+              : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
+            const color = getColor(rec);
+            return h('span', {
+              class: 'o_tag_pill',
+              style: `background: ${color.bg}; color: ${color.text}; border: 1px solid ${color.border}; padding: 2px 6px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;`
+            }, [
+              h('span', null, String(nameVal)),
+              h('span', {
+                class: 'o_tag_close_btn',
+                style: 'cursor: pointer; font-size: 10px; opacity: 0.6; hover: opacity: 1; font-weight: bold; padding: 0 2px;',
+                onClick: (e: Event) => removeTag(rec, e)
+              }, '×')
+            ]);
+          }),
+
+          h('input', {
+            type: 'text',
+            class: 'o_tag_input',
+            style: 'border: none; outline: none; flex-grow: 1; font-size: 13px; min-width: 60px; padding: 2px 4px; background: transparent;',
+            placeholder: childRecords.length === 0 ? 'Search or type tag...' : '',
+            value: inputVal.value,
+            onInput: (e: any) => {
+              inputVal.value = e.target.value;
+              showDropdown.value = true;
+            },
+            onKeydown: handleKeydown,
+            onFocus: () => { showDropdown.value = true; }
+          })
+        ]),
+
+        showDropdown.value ? h('div', {
+          class: 'o_tag_dropdown',
+          style: 'position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 1000; max-height: 180px; overflow-y: auto;'
+        }, [
+          tagSuggestions
+            .filter(s => {
+              const alreadySelected = childRecords.some((rec: any) => {
+                const nameVal = rec?.get 
+                  ? rec.get('display_name') || rec.get('name') 
+                  : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
+                return String(nameVal).toLowerCase() === s.toLowerCase();
+              });
+              const matchesKeyword = s.toLowerCase().includes(inputVal.value.toLowerCase());
+              return !alreadySelected && matchesKeyword;
+            })
+            .map(sug => h('div', {
+              class: 'o_tag_dropdown_item',
+              style: 'padding: 8px 12px; font-size: 13px; cursor: pointer; color: #334155; hover: background: #f1f5f9; display: flex; align-items: center;',
+              onClick: (e: Event) => selectSuggestion(sug, e)
+            }, sug)),
+
+          inputVal.value.trim() && !tagSuggestions.some(s => s.toLowerCase() === inputVal.value.trim().toLowerCase()) ? h('div', {
+            class: 'o_tag_dropdown_item_create',
+            style: 'padding: 8px 12px; font-size: 13px; cursor: pointer; color: #714B67; font-weight: 500; background: #faf5f8; border-top: 1px solid #f3e8ff;',
+            onClick: (e: Event) => {
+              addTag(inputVal.value.trim());
+              inputVal.value = '';
+              showDropdown.value = false;
+            }
+          }, `Create "${inputVal.value.trim()}"...`) : null
+        ]) : null
+      ]);
     };
   }
 });
@@ -643,5 +823,6 @@ export function registerCoreComponents() {
   componentRegistry.add('image', FieldImage);
   componentRegistry.add('handle', FieldHandle);
   componentRegistry.add('tag', FieldTag);
+  componentRegistry.add('many2many_tags', FieldTag);
   componentRegistry.add('percentage', FieldPercentage);
 }

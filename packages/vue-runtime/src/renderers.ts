@@ -13,6 +13,7 @@ const WIDGET_COMPATIBILITY_MAP: Record<string, string[]> = {
   'priority': ['integer', 'selection', 'char'],
   'badge': ['selection', 'char', 'integer'],
   'tag': ['many2many', 'one2many'],
+  'many2many_tags': ['many2many', 'one2many'],
   'many2one': ['many2one'],
   'one2many': ['one2many', 'many2many'],
   'many2many': ['many2many', 'one2many'],
