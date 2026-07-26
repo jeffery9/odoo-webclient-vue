@@ -10,7 +10,9 @@
     "@odoo/sdk": "^0.1.0",
     "@odoo/vue-runtime": "^0.1.0",
     "@vuepic/vue-datepicker": "^14.0.0",
-    "vue": "^3.4.35"
+    "echarts": "^6.1.0",
+    "vue": "^3.4.35",
+    "vue-echarts": "^8.0.1"
   },
   "devDependencies": {
     "vite": "^5.4.0"

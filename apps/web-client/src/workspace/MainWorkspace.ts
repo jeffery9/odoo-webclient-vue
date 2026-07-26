@@ -5,7 +5,8 @@ import {
   GraphRenderer,
   PivotRenderer,
   CalendarRenderer,
-  ActivityRenderer
+  ActivityRenderer,
+  rendererRegistry
 } from '@odoo/vue-runtime';
 import { RecordProxy } from '@odoo/sdk';
 import { activeMenu } from '../layout/state.js';
@@ -192,25 +193,25 @@ export const MainWorkspace = {
           !['list', 'kanban', 'form'].includes(activeViewType.value) ? h('div', { style: 'padding: 24px; height: 100%; overflow-y: auto; background: #f8fafc; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px;' }, [
             
             // Render Graph view
-            activeViewType.value === 'graph' ? h(GraphRenderer, {
+            activeViewType.value === 'graph' ? h(rendererRegistry.has('graph') ? rendererRegistry.get('graph') : GraphRenderer, {
               arch: viewArchs.value.graph,
               records: filteredRecords.value
             }) : null,
 
             // Render Pivot view
-            activeViewType.value === 'pivot' ? h(PivotRenderer, {
+            activeViewType.value === 'pivot' ? h(rendererRegistry.has('pivot') ? rendererRegistry.get('pivot') : PivotRenderer, {
               arch: viewArchs.value.pivot,
               records: filteredRecords.value
             }) : null,
 
             // Render Calendar view
-            activeViewType.value === 'calendar' ? h(CalendarRenderer, {
+            activeViewType.value === 'calendar' ? h(rendererRegistry.has('calendar') ? rendererRegistry.get('calendar') : CalendarRenderer, {
               arch: viewArchs.value.calendar,
               records: filteredRecords.value
             }) : null,
 
             // Render Activity view
-            activeViewType.value === 'activity' ? h(ActivityRenderer, {
+            activeViewType.value === 'activity' ? h(rendererRegistry.has('activity') ? rendererRegistry.get('activity') : ActivityRenderer, {
               arch: viewArchs.value.activity,
               records: filteredRecords.value
             }) : null,

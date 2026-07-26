@@ -453,4 +453,9 @@ const App = {
   }
 };
 
+import { rendererRegistry } from '@odoo/vue-runtime';
+import { PremiumGraphRenderer } from './widgets/PremiumGraphRenderer.js';
+
+rendererRegistry.add('graph', PremiumGraphRenderer);
+
 createApp(App).mount('#app');
