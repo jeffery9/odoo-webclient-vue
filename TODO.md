@@ -323,3 +323,25 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 
 ### Task 20.4: Hardcoded Arch Fallback Abstraction
 - [ ] Refactor the hardcoded { tag: 'field', attrs: { name: 'display_name', string: 'Name' } } fallback AST injections currently spread across FieldMany2many and FieldOne2many in vue-runtime/src/widgets.ts. Move these structural anomalies into a dedicated ArchFallbackGenerator factory within the ArchCompiler.
+
+---
+
+## 🦠 Phase 21: Native Odoo 19 Architectural Drifts & Backend Quirks Isolation
+
+*(This phase tracks structural drifts inherent to Odoo 19's own official backend architecture and API design. We must isolate these external quirks from our SDK's pure semantic contract to prevent upstream pollution.)*
+
+### Task 21.1: Multi-Generational Modifier Syntax Entanglement (`attrs` vs Python Expr)
+- **Odoo Drift**: Odoo 19's XML views heavily mix legacy Odoo 14-16 `attrs="{'invisible': [('x','=',True)]}"` arrays with modern Odoo 19 inline Python expressions `invisible="x == True"`. Odoo's own backend parsers often stumble when both exist or when third-party modules inject legacy `attrs` via `<xpath>` into modern views.
+- **SDK Remediation**: Implement a strict AST normalization boundary in the `ArchCompiler`. All incoming XML modifier formats (legacy `attrs`, modern inline) must be transpiled into a unified, version-agnostic Semantic Modifier IR *before* reaching the client execution runtime.
+
+### Task 21.2: The `load_views` vs `get_views` Response Schema Mismatch
+- **Odoo Drift**: Odoo 16+ replaced `load_views` with `get_views`, changing the root payload key from `fields_views` to `views`, and reclassifying `tree` views as `list` views. However, historical action definitions and older third-party modules still request `view_type="tree"`, forcing Odoo's backend to do messy string mapping on the fly.
+- **SDK Remediation**: Enforce a rigid Schema Translator at the `RPCClient` level. All incoming `get_views` responses must be normalized to standard SDK models. The frontend Router and Action Manager should natively operate on `list` and never pass `tree` to the backend.
+
+### Task 21.3: Relational Widget Sub-View Bleeding
+- **Odoo Drift**: In Odoo 19, One2many/Many2many fields often fail to include inline `<tree>` definitions in the XML. Instead of explicitly defining fallback logic, Odoo's OWL client heavily couples itself to the backend's default view resolution, causing massive N+1 RPC requests (`get_views` for every sub-model) and unpredictable UI rendering if the default list view contains heavy custom widgets.
+- **SDK Remediation**: Mandate the Task 14.3 Priority Resolution Tree natively in the SDK. If no inline arch is provided, the SDK must enforce a lightweight `ArchFallbackGenerator` to prevent catastrophic N+1 RPC cascades when rendering deep relational grids.
+
+### Task 21.4: Context Propagation Pollution (`active_id` vs `active_ids`)
+- **Odoo Drift**: Odoo's backend action execution relies heavily on `active_id` and `active_ids` in the context. Over years of development, standard Odoo buttons and window actions inconsistently evaluate whether to pass a single ID or an array, often leading to backend Python `TypeError`s if a model expects `active_ids` but only receives `active_id`.
+- **SDK Remediation**: Implement a Context Sanitizer in the `ActionManager`. When dispatching actions, automatically normalize `active_id` and `active_ids` to ensure both are present and correctly typed (array vs int) based on the current `RecordProxy` state, shielding the backend from its own ambiguity.
