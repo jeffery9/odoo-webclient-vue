@@ -84,8 +84,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Set up Vue `provide/inject` boundaries for global services (notification system, dialog modals).
 
 ### Task 5.2: View Renderers
-- [ ] Implement `ListRenderer` converting List Semantic JSON IR into table layouts with pager utilities.
-- [ ] Implement `FormRenderer` compiling Form Semantic JSON IR into flexible reactive layouts with notebook page structures.
+- [x] Implement `ListRenderer` converting List Semantic JSON IR into table layouts with pager utilities.
+- [x] Implement `FormRenderer` compiling Form Semantic JSON IR into flexible reactive layouts with notebook page structures.
 
 ### Task 5.3: Base UI Widgets
 - [ ] Create essential field components: `FieldChar`, `FieldBoolean`, `FieldMany2one`.
