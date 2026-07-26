@@ -1,6 +1,6 @@
-import { createApp, h, reactive, ref, computed } from 'vue';
-import { RecordProxy } from '@odoo/sdk';
-import { ListRenderer, FormRenderer, componentRegistry } from '@odoo/vue-runtime';
+import { createApp, h, reactive, ref, computed, onMounted } from 'vue';
+import { RecordProxy, HashRouter } from '@odoo/sdk';
+import { ListRenderer, FormRenderer } from '@odoo/vue-runtime';
 
 // 1. Setup Mock Odoo Data with standard fields and initial values
 const partnerRecords = reactive([
@@ -17,7 +17,10 @@ const readonlyMode = ref(true);
 const searchQuery = ref('');
 const activeFilter = ref<'all' | 'active'>('all');
 
-// 3. Define UI View Compile Archs
+// 3. Instantiate the HashRouter to power our SPA routing
+const router = new HashRouter(window.location);
+
+// 4. Define UI View Compile Archs
 const listArch = {
   type: 'list',
   children: [
@@ -43,10 +46,10 @@ const formArch = {
   ]
 };
 
-// 4. Create App Component
+// 5. Create App Component
 const App = {
   setup() {
-    // Filter records dynamically based on active filter and search text
+    // Dynamic record filtering based on filters & search queries
     const filteredRecords = computed(() => {
       return partnerRecords.filter(rec => {
         const nameVal = rec.get('name') || '';
@@ -56,10 +59,30 @@ const App = {
       });
     });
 
+    // Sync active reactive states to the browser URL hash
+    const syncStateToHash = () => {
+      const params: Record<string, string | number> = {
+        app: currentApp.value,
+        view_type: activeViewType.value
+      };
+      if (activeViewType.value === 'form' && selectedRecord.value) {
+        params.id = selectedRecord.value.id || '';
+      }
+      router.setParams(params);
+    };
+
+    // Triggered when clicking a row in List view
     const selectPartner = (rec: RecordProxy) => {
       selectedRecord.value = rec;
       activeViewType.value = 'form';
       readonlyMode.value = true;
+      syncStateToHash();
+    };
+
+    // Triggered when clicking back-links, breadcrumbs or view switchers
+    const setViewType = (view: 'list' | 'form') => {
+      activeViewType.value = view;
+      syncStateToHash();
     };
 
     const handleCreate = () => {
@@ -69,6 +92,7 @@ const App = {
       selectedRecord.value = newRec;
       activeViewType.value = 'form';
       readonlyMode.value = false;
+      syncStateToHash();
     };
 
     const toggleEdit = () => {
@@ -89,7 +113,39 @@ const App = {
     const navigateToApp = (appName: string) => {
       currentApp.value = appName;
       activeViewType.value = 'list';
+      syncStateToHash();
     };
+
+    // Listen to incoming hash/route updates and synchronize our reactive state (SPA PopState)
+    const handleHashNavigation = (params: Record<string, string>) => {
+      if (params.app) {
+        currentApp.value = params.app;
+      }
+      if (params.view_type) {
+        activeViewType.value = params.view_type as any;
+      }
+      if (params.id) {
+        const recordId = Number(params.id);
+        const found = partnerRecords.find(r => r.id === recordId);
+        if (found) {
+          selectedRecord.value = found;
+        }
+      }
+    };
+
+    onMounted(() => {
+      // 1. Process initial route from incoming address bar (Deep Linking)
+      const initialParams = router.getParams();
+      if (Object.keys(initialParams).length > 0) {
+        handleHashNavigation(initialParams);
+      } else {
+        // Populate default values in URL bar on clean boot
+        syncStateToHash();
+      }
+
+      // 2. Bind PopState navigation callback
+      router.onNavigate(handleHashNavigation);
+    });
 
     return () => h('div', { style: 'height: 100%; display: flex; flex-direction: column;' }, [
       // 1. Top Navbar
@@ -120,11 +176,11 @@ const App = {
       // 2. Control Panel
       h('div', { class: 'o_control_panel' }, [
         h('div', { class: 'o_cp_left' }, [
-          // Breadcrumbs
+          // Breadcrumbs (fully clickable back links)
           h('div', { class: 'o_breadcrumb' }, [
             h('span', {
               class: 'o_breadcrumb_link',
-              onClick: () => { activeViewType.value = 'list'; }
+              onClick: () => setViewType('list')
             }, currentApp.value),
             activeViewType.value === 'form' ? h('span', { class: 'o_breadcrumb_separator' }, '/') : null,
             activeViewType.value === 'form' ? h('span', null, selectedRecord.value.get('name')) : null
@@ -139,7 +195,7 @@ const App = {
                     : h('button', { class: 'o_btn_primary', onClick: saveChanges }, 'Save'),
                   !readonlyMode.value
                     ? h('button', { class: 'o_btn_secondary', onClick: discardChanges }, 'Discard')
-                    : h('button', { class: 'o_btn_secondary', onClick: () => { activeViewType.value = 'list'; } }, 'Back to List')
+                    : h('button', { class: 'o_btn_secondary', onClick: () => setViewType('list') }, 'Back to List')
                 ])
           ])
         ]),
@@ -167,15 +223,15 @@ const App = {
               }, 'Active Only')
             ])
           ]) : null,
-          // View Switcher
+          // View Switcher (fully synchronized SPA routing)
           h('div', { class: 'o_cp_switch_buttons' }, [
             h('button', {
               class: ['o_switch_btn', activeViewType.value === 'list' ? 'active' : ''],
-              onClick: () => { activeViewType.value = 'list'; }
+              onClick: () => setViewType('list')
             }, 'List ☰'),
             h('button', {
               class: ['o_switch_btn', activeViewType.value === 'form' ? 'active' : ''],
-              onClick: () => { activeViewType.value = 'form'; }
+              onClick: () => setViewType('form')
             }, 'Form ▭')
           ])
         ])
