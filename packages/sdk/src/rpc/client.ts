@@ -85,33 +85,58 @@ export class RPCClient {
   }
 
   // Unified HTTP Request Method
-  async request(urlPath: string, params: any): Promise<any> {
+  async request(urlPath: string, params: any, method: 'GET' | 'POST' = 'POST'): Promise<any> {
     const cleanPath = urlPath.startsWith('/') ? urlPath : `/${urlPath}`;
-    const url = `${this.endpoint}${cleanPath}`;
+    let url = `${this.endpoint}${cleanPath}`;
     
-    const rpcParams = { ...params };
-    if (this.csrfToken && !rpcParams.csrf_token) {
-      rpcParams.csrf_token = this.csrfToken;
-    }
+    let response;
+    if (method === 'GET') {
+      const queryParams = new URLSearchParams();
+      if (params) {
+        for (const [key, val] of Object.entries(params)) {
+          if (val !== undefined && val !== null) {
+            queryParams.append(key, String(val));
+          }
+        }
+      }
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'call',
-        id: this.nextId++,
-        params: rpcParams
-      })
-    });
+      response = await fetch(url, {
+        method: 'GET'
+      });
+    } else {
+      const rpcParams = { ...params };
+      if (this.csrfToken && !rpcParams.csrf_token) {
+        rpcParams.csrf_token = this.csrfToken;
+      }
+
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'call',
+          id: this.nextId++,
+          params: rpcParams
+        })
+      });
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP Error: ${response.status}`);
     }
 
     const json = await response.json();
+
+    if (method === 'GET') {
+      return json;
+    }
+
     if (json.error) {
       throw RPCClient.parseError(json.error);
     }
@@ -121,11 +146,11 @@ export class RPCClient {
 
   // High-Level ORM Helper Methods
   async loadMenus(): Promise<any> {
-    return this.request('/web/webclient/load_menus', { hash: '' });
+    return this.request('/web/webclient/load_menus', {}, 'GET');
   }
 
   async loadTranslations(lang = 'en_US', hash = ''): Promise<any> {
-    return this.request('/web/webclient/translations', { lang, hash });
+    return this.request('/web/webclient/translations', { lang, hash }, 'GET');
   }
 
   async loadAction(actionId: number): Promise<any> {

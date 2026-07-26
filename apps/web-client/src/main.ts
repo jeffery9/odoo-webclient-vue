@@ -32,7 +32,9 @@ import {
   menus,
   activeMenu,
   activeMenuName,
+  showAppSwitcher,
 } from './layout/state.js';
+import { AppSwitcher } from './layout/AppSwitcher.js';
 import { ControlPanel } from './layout/ControlPanel.js';
 
 import {
@@ -126,8 +128,12 @@ const App = {
       }
 
       menus.value = parsedApps;
-      if (parsedApps.length > 0) {
-        await selectApp(parsedApps[0]);
+      const initialParams = router.getParams();
+      if (Object.keys(initialParams).length === 0) {
+        // No explicit initial action requested via hash navigation, show the beautiful App Switcher home menu!
+        showAppSwitcher.value = true;
+        activeMenu.value = null;
+        activeAction.value = null;
       }
     };
 
@@ -145,6 +151,7 @@ const App = {
     };
 
     const selectApp = async (app: any) => {
+      showAppSwitcher.value = false;
       activeMenu.value = app;
       currentOffset.value = 0;
 
@@ -192,6 +199,9 @@ const App = {
     };
 
     const handleHashNavigation = async (params: Record<string, string>) => {
+      if (Object.keys(params).length > 0) {
+        showAppSwitcher.value = false;
+      }
       if (params.menu_id) {
         const menuId = Number(params.menu_id);
         const found = menus.value.find(m => m.id === menuId);
@@ -252,13 +262,26 @@ const App = {
       // Navbar Component
       h('header', { class: 'o_main_navbar' }, [
         h('div', { class: 'o_navbar_left' }, [
-          h('div', { class: 'o_menu_brand' }, '☰ Apps'),
-          isAuthenticated.value ? h('nav', { class: 'o_navbar_apps' }, 
-            menus.value.map(m => h('a', {
-              class: ['o_nav_link', activeMenu.value?.id === m.id ? 'active' : ''],
-              onClick: () => selectApp(m)
-            }, m.name))
-          ) : null
+          // Odoo Enterprise Waffle Toggle button (⚏)
+          isAuthenticated.value ? h('button', {
+            class: ['o_navbar_waffle', showAppSwitcher.value ? 'active' : ''],
+            style: 'background: transparent; border: none; color: white; font-size: 20px; padding: 0 16px; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;',
+            onClick: () => {
+              showAppSwitcher.value = !showAppSwitcher.value;
+              if (showAppSwitcher.value) {
+                activeMenu.value = null;
+                activeAction.value = null;
+              } else if (menus.value.length > 0) {
+                // Default to first app on close if none selected
+                selectApp(menus.value[0]);
+              }
+            }
+          }, '⚏') : h('div', { class: 'o_menu_brand' }, '☰ Apps'),
+
+          // Show active app name next to waffle or "Home Menu" if switcher is open
+          isAuthenticated.value ? h('div', {
+            style: 'font-weight: 500; font-size: 14px; margin-left: 8px;'
+          }, showAppSwitcher.value ? 'Home Menu' : (activeMenu.value?.name || '')) : null
         ]),
         h('div', { class: 'o_navbar_right' }, [
           isAuthenticated.value
@@ -418,36 +441,41 @@ const App = {
 
       // Main Content Area
       isAuthenticated.value ? h('div', { style: 'flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;' }, [
-        // Control Panel
-        h(ControlPanel, {
-          activeViewType: activeViewType.value,
-          selectedRecord: selectedRecord.value,
-          readonlyMode: readonlyMode.value,
-          searchQuery: searchQuery.value,
-          currentOffset: currentOffset.value,
-          currentLimit: currentLimit.value,
-          totalRecordsCount: totalRecordsCount.value,
-          onPageNext: handlePageNext,
-          onPagePrev: handlePagePrev,
-          onSearchInput: (val: string) => { searchQuery.value = val; },
-          onCreate: handleCreate,
-          onToggleEdit: () => { readonlyMode.value = !readonlyMode.value; },
-          onSaveChanges: saveChanges,
-          onDiscardChanges: discardChanges,
-          onBackToList: () => { activeViewType.value = resolveDefaultViewType(activeAction.value); readonlyMode.value = true; },
-          onSetViewType: setViewType,
-        }),
+        showAppSwitcher.value ? h(AppSwitcher, {
+          menus: menus.value,
+          onSelect: selectApp
+        }) : h('div', { style: 'flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;' }, [
+          // Control Panel
+          h(ControlPanel, {
+            activeViewType: activeViewType.value,
+            selectedRecord: selectedRecord.value,
+            readonlyMode: readonlyMode.value,
+            searchQuery: searchQuery.value,
+            currentOffset: currentOffset.value,
+            currentLimit: currentLimit.value,
+            totalRecordsCount: totalRecordsCount.value,
+            onPageNext: handlePageNext,
+            onPagePrev: handlePagePrev,
+            onSearchInput: (val: string) => { searchQuery.value = val; },
+            onCreate: handleCreate,
+            onToggleEdit: () => { readonlyMode.value = !readonlyMode.value; },
+            onSaveChanges: saveChanges,
+            onDiscardChanges: discardChanges,
+            onBackToList: () => { activeViewType.value = resolveDefaultViewType(activeAction.value); readonlyMode.value = true; },
+            onSetViewType: setViewType,
+          }),
 
-        // Workspace Render Grid
-        h(MainWorkspace, {
-          onSelectRecord: (rec: any) => {
-            if (rec.actionID) {
-              selectSubmenu(rec);
-            } else {
-              selectPartner(rec);
+          // Workspace Render Grid
+          h(MainWorkspace, {
+            onSelectRecord: (rec: any) => {
+              if (rec.actionID) {
+                selectSubmenu(rec);
+              } else {
+                selectPartner(rec);
+              }
             }
-          }
-        })
+          })
+        ])
       ]) : null
     ]);
   }

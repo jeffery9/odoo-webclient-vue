@@ -105,11 +105,11 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
 
     // 4. Step 2: Fetch and parse dynamic menu structure
     const serverMenus = await client.loadMenus();
-    expect(requestSpy).toHaveBeenCalledWith('/web/webclient/load_menus', { hash: '' });
+    expect(requestSpy).toHaveBeenCalledWith('/web/webclient/load_menus', {}, 'GET');
     expect(serverMenus.root.children).toEqual([1, 2]);
 
     const transResponse = await client.loadTranslations('en_US');
-    expect(requestSpy).toHaveBeenCalledWith('/web/webclient/translations', { lang: 'en_US', hash: '' });
+    expect(requestSpy).toHaveBeenCalledWith('/web/webclient/translations', { lang: 'en_US', hash: '' }, 'GET');
     expect(transResponse.lang).toBe('en_US');
 
     const apps = serverMenus.root.children.map((mid: number) => serverMenus[mid]);
