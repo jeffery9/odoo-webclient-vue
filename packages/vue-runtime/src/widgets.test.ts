@@ -132,13 +132,13 @@ describe('Odoo Vue Base UI Widgets', () => {
     expect(datetimeVnode.props.type).toBe('datetime-local');
   });
 
-  test('should render FieldOne2many and FieldMany2many list items', () => {
+  test('should render FieldOne2many and FieldMany2many list items by delegating to ListRenderer', () => {
     const record = new RecordProxy('res.partner', { child_ids: [1, 2] });
     
     const o2mWidget = componentRegistry.get('one2many') as any;
     const o2mVnode = o2mWidget.setup({ record, name: 'child_ids', readonly: false }, {})();
-    expect(o2mVnode.type).toBe('div');
-    expect(o2mVnode.children[0].length).toBe(2); // 2 tag spans
+    expect(o2mVnode.type).toBe(ListRenderer);
+    expect(o2mVnode.props.arch.tag).toBe('tree');
   });
 
   test('should render FieldOne2many with nested sub-view tree list and inline editing', () => {
@@ -214,6 +214,22 @@ describe('Odoo Vue Base UI Widgets', () => {
     // Assert semantic delegation to CardRenderer
     expect(o2mVnode.type).toBe(CardRenderer);
     expect(o2mVnode.props.arch).toBe(subViews[0]);
+    expect(o2mVnode.props.records).toBe(childRecords);
+  });
+
+  test('should dynamically construct and delegate to ListRenderer with fallback arch when subViews is empty', () => {
+    const childRecords = [
+      new RecordProxy('res.partner.line', { id: 5, display_name: 'Fallback Partner' })
+    ];
+    const parentRecord = new RecordProxy('res.partner', { fallback_line_ids: childRecords });
+
+    const o2mWidget = componentRegistry.get('one2many') as any;
+    const o2mVnode = o2mWidget.setup({ record: parentRecord, name: 'fallback_line_ids', readonly: false, subViews: [] }, {})();
+
+    // Check that it delegated to ListRenderer with a dynamically constructed default fallback tree arch
+    expect(o2mVnode.type).toBe(ListRenderer);
+    expect(o2mVnode.props.arch.tag).toBe('tree');
+    expect(o2mVnode.props.arch.children[1].attrs.name).toBe('display_name');
     expect(o2mVnode.props.records).toBe(childRecords);
   });
 });

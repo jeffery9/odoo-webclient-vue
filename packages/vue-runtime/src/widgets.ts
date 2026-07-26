@@ -299,28 +299,24 @@ export const FieldOne2many = defineComponent({
       const val = props.record?.get(props.name) || [];
       const childRecords = Array.isArray(val) ? val : [];
 
-      if (treeNode) {
-        return h(ListRenderer, { arch: treeNode, records: childRecords });
+      let activeArch = treeNode;
+      if (!activeArch && !cardNode) {
+        activeArch = {
+          tag: 'tree',
+          children: [
+            { tag: 'field', attrs: { name: 'id', string: 'ID' } },
+            { tag: 'field', attrs: { name: 'display_name', string: 'Name' } }
+          ]
+        };
+      }
+
+      if (activeArch) {
+        return h(ListRenderer, { arch: activeArch, records: childRecords });
       }
 
       if (cardNode) {
         return h(CardRenderer, { arch: cardNode, records: childRecords });
       }
-
-      // Fallback rendering if no nested subview is configured
-      if (props.readonly) {
-        const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-        return h('div', { class: 'o_field_relational o_readonly' }, spans);
-      }
-
-      const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-      const addBtn = h('button', {
-        type: 'button',
-        class: 'o_btn o_btn_secondary',
-        onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
-      }, '+ Add Item');
-
-      return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
     };
   }
 });
@@ -339,27 +335,24 @@ export const FieldMany2many = defineComponent({
       const val = props.record?.get(props.name) || [];
       const childRecords = Array.isArray(val) ? val : [];
 
-      if (treeNode) {
-        return h(ListRenderer, { arch: treeNode, records: childRecords });
+      let activeArch = treeNode;
+      if (!activeArch && !cardNode) {
+        activeArch = {
+          tag: 'tree',
+          children: [
+            { tag: 'field', attrs: { name: 'id', string: 'ID' } },
+            { tag: 'field', attrs: { name: 'display_name', string: 'Name' } }
+          ]
+        };
+      }
+
+      if (activeArch) {
+        return h(ListRenderer, { arch: activeArch, records: childRecords });
       }
 
       if (cardNode) {
         return h(CardRenderer, { arch: cardNode, records: childRecords });
       }
-
-      if (props.readonly) {
-        const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-        return h('div', { class: 'o_field_relational o_readonly' }, spans);
-      }
-
-      const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-      const addBtn = h('button', {
-        type: 'button',
-        class: 'o_btn o_btn_secondary',
-        onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
-      }, '+ Link Item');
-
-      return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
     };
   }
 });
