@@ -31,6 +31,18 @@ export class RecordProxy {
   }
 
   get(field: string): any {
+    if (field === 'display_name') {
+      const val = field in this._changes ? this._changes[field] : this._data[field];
+      if (val !== undefined && val !== null && val !== '') {
+        return val;
+      }
+      const nameVal = 'name' in this._changes ? this._changes['name'] : this._data['name'];
+      if (nameVal !== undefined && nameVal !== null && nameVal !== '') {
+        return nameVal;
+      }
+      return `(${this.model}, ${this.id ?? 'new'})`;
+    }
+
     if (field in this._changes) {
       return this._changes[field];
     }

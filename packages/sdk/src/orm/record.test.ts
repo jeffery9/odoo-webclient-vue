@@ -61,4 +61,22 @@ describe('Odoo Reactive Record Proxy & Transaction Cache', () => {
     expect(body.params.method).toBe('write');
     expect(body.params.args).toEqual([[42], { name: 'Premium OBD2 Scanner' }]);
   });
+
+  test('should fallback correctly for display_name according to Odoo convention', () => {
+    // 1. pristine display_name exists
+    const rec1 = new RecordProxy('res.partner', { id: 10, display_name: 'Mitchell Admin', name: 'Mitchell' });
+    expect(rec1.get('display_name')).toBe('Mitchell Admin');
+
+    // 2. display_name missing, fallback to name
+    const rec2 = new RecordProxy('res.partner', { id: 11, name: 'Marc Demo' });
+    expect(rec2.get('display_name')).toBe('Marc Demo');
+
+    // 3. both missing, fallback to (model_name, id)
+    const rec3 = new RecordProxy('purchase.order', { id: 42 });
+    expect(rec3.get('display_name')).toBe('(purchase.order, 42)');
+
+    // 4. new record with both missing, fallback to (model_name, new)
+    const rec4 = new RecordProxy('purchase.order', {});
+    expect(rec4.get('display_name')).toBe('(purchase.order, new)');
+  });
 });
