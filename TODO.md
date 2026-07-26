@@ -88,8 +88,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Implement `FormRenderer` compiling Form Semantic JSON IR into flexible reactive layouts with notebook page structures.
 
 ### Task 5.3: Base UI Widgets
-- [ ] Create essential field components: `FieldChar`, `FieldBoolean`, `FieldMany2one`.
-- [ ] Create functional frame elements: `Notebook/Tabs`, `ControlPanel`, `ButtonBox`, `StatusBar`.
+- [x] Create essential field components: `FieldChar`, `FieldBoolean`, `FieldMany2one`.
+- [x] Create functional frame elements: `Notebook/Tabs`, `ControlPanel`, `ButtonBox`, `StatusBar`.
 
 ---
 
