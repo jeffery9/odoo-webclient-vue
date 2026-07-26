@@ -43,8 +43,12 @@ describe('Odoo Vue View Renderers', () => {
     const tbody = vnode.children[1];
     expect(tbody.type).toBe('tbody');
     expect(tbody.children.length).toBe(2); // 2 records
-    expect(tbody.children[0].children[0].children).toBe('Screwdriver');
-    expect(tbody.children[1].children[0].children).toBe('Hammer');
+    
+    const firstRowFirstCellSpan = tbody.children[0].children[0].children[0] || tbody.children[0].children[0].children;
+    expect(firstRowFirstCellSpan.children).toBe('Screwdriver');
+
+    const secondRowFirstCellSpan = tbody.children[1].children[0].children[0] || tbody.children[1].children[0].children;
+    expect(secondRowFirstCellSpan.children).toBe('Hammer');
   });
 
   test('should compile FormRenderer arch and single record into styled sheet layouts', () => {

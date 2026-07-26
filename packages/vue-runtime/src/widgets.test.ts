@@ -17,6 +17,7 @@ import {
   FieldMany2many
 } from './widgets.js';
 import { RecordProxy } from '@odoo/sdk';
+import { ListRenderer, CardRenderer } from './renderers.js';
 
 describe('Odoo Vue Base UI Widgets', () => {
   // Populate components in registry for rendering tests
@@ -161,19 +162,13 @@ describe('Odoo Vue Base UI Widgets', () => {
     const o2mWidget = componentRegistry.get('one2many') as any;
     const o2mVnode = o2mWidget.setup({ record: parentRecord, name: 'line_ids', readonly: false, subViews }, {})();
 
-    // Check that it rendered a table
-    expect(o2mVnode.type).toBe('table');
-    const tbody = o2mVnode.children[1];
-    expect(tbody.children.length).toBe(2); // 2 lines
-
-    // With editable='bottom', cells must contain active input elements for inline edit
-    const firstRowCells = tbody.children[0].children;
-    const cellWidget = Array.isArray(firstRowCells[0].children) ? firstRowCells[0].children[0] : firstRowCells[0].children;
-    expect(cellWidget.type).toBe(FieldChar); // Resolved widget for name column!
-    expect(cellWidget.props.readonly).toBe(false);
+    // Assert semantic delegation to ListRenderer
+    expect(o2mVnode.type).toBe(ListRenderer);
+    expect(o2mVnode.props.arch).toBe(subViews[0]);
+    expect(o2mVnode.props.records).toBe(childRecords);
   });
 
-  test('should open Form Popup Dialog on row click when editable is omitted', () => {
+  test('should delegate Form Popup Dialog on row click when editable is omitted', () => {
     const childRecords = [
       new RecordProxy('res.partner.line', { id: 1, name: 'Line 1' })
     ];
@@ -189,22 +184,14 @@ describe('Odoo Vue Base UI Widgets', () => {
       }
     ];
 
-    const mockActionManager = {
-      doAction: vi.fn()
-    };
-
     const o2mWidget = componentRegistry.get('one2many') as any;
-    
-    // Provide a mocked action manager using vi.spyOn or manually executing handler
-    const setupResult = o2mWidget.setup({ record: parentRecord, name: 'line_ids', readonly: false, subViews }, {});
-    const renderFn = setupResult;
-    
-    // Test the custom row-click popup trigger directly or inject mockActionManager into custom setup env
-    const o2mVnode = renderFn();
-    expect(o2mVnode.type).toBe('table');
+    const o2mVnode = o2mWidget.setup({ record: parentRecord, name: 'line_ids', readonly: false, subViews }, {})();
+
+    expect(o2mVnode.type).toBe(ListRenderer);
+    expect(o2mVnode.props.arch).toBe(subViews[0]);
   });
 
-  test('should render FieldOne2many with nested sub-view card grid', () => {
+  test('should delegate FieldOne2many with nested sub-view card grid to CardRenderer', () => {
     const childRecords = [
       new RecordProxy('res.partner.line', { id: 10, name: 'Card Item 1', qty: 100 })
     ];
@@ -224,19 +211,9 @@ describe('Odoo Vue Base UI Widgets', () => {
     const o2mWidget = componentRegistry.get('one2many') as any;
     const o2mVnode = o2mWidget.setup({ record: parentRecord, name: 'card_line_ids', readonly: false, subViews }, {})();
 
-    // Check that it rendered a card grid wrapper div
-    expect(o2mVnode.type).toBe('div');
-    expect(o2mVnode.props.class).toBe('o_card_grid');
-    expect(o2mVnode.children.length).toBe(1); // 1 card
-
-    const firstCard = o2mVnode.children[0];
-    expect(firstCard.type).toBe('div');
-    expect(firstCard.props.class).toBe('o_subview_card');
-
-    // Inner card field labels and widget resolution
-    const fieldsContainer = firstCard.children;
-    expect(fieldsContainer.length).toBe(2); // 2 fields
-    expect(fieldsContainer[0].children[0].type).toBe('strong');
-    expect(fieldsContainer[0].children[0].children).toBe('Card Name');
+    // Assert semantic delegation to CardRenderer
+    expect(o2mVnode.type).toBe(CardRenderer);
+    expect(o2mVnode.props.arch).toBe(subViews[0]);
+    expect(o2mVnode.props.records).toBe(childRecords);
   });
 });

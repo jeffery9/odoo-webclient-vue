@@ -1,6 +1,7 @@
 import { defineComponent, h, inject } from 'vue';
 import { ACTION_MANAGER_KEY } from './di.js';
 import { componentRegistry } from './registry.js';
+import { ListRenderer, CardRenderer } from './renderers.js';
 
 export const FieldChar = defineComponent({
   props: {
@@ -292,108 +293,34 @@ export const FieldOne2many = defineComponent({
     subViews: { type: Array, default: () => [] }
   },
   setup(props) {
-    const actionManager = inject(ACTION_MANAGER_KEY, null);
-
     return () => {
-      const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list') as any;
-      const cardNode = (props.subViews || []).find((v: any) => v.tag === 'card') as any;
+      const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list');
+      const cardNode = (props.subViews || []).find((v: any) => v.tag === 'card');
       const val = props.record?.get(props.name) || [];
       const childRecords = Array.isArray(val) ? val : [];
 
-      // Render modern Card Grid Layout if card view is configured
+      if (treeNode) {
+        return h(ListRenderer, { arch: treeNode, records: childRecords });
+      }
+
       if (cardNode) {
-        const cardFields = (cardNode.children || []).filter((c: any) => c.tag === 'field');
-        const cards = childRecords.map((childRec: any) => {
-          const fieldsVNodes = cardFields.map((f: any) => {
-            const fieldName = f.attrs.name;
-            const widgetName = f.attrs.widget || 'char';
-            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
-            return h('div', { class: 'o_card_field', style: 'margin-bottom: 4px;' }, [
-              h('strong', { style: 'margin-right: 4px;' }, f.attrs?.string || fieldName),
-              h(widgetComp, { record: childRec, name: fieldName, readonly: true })
-            ]);
-          });
-
-          return h('div', {
-            class: 'o_subview_card',
-            style: 'border: 1px solid #ddd; padding: 12px; border-radius: 6px; flex: 1 1 200px; cursor: pointer;',
-            onClick: () => {
-              if (actionManager) {
-                actionManager.doAction({
-                  name: 'Edit Relation Card',
-                  res_model: 'sub.model',
-                  type: 'ir.actions.act_window',
-                  views: [[false, 'form']],
-                  target: 'new',
-                  res_id: childRec.id
-                });
-              }
-            }
-          }, fieldsVNodes);
-        });
-
-        return h('div', { class: 'o_card_grid', style: 'display: flex; flex-wrap: wrap; gap: 12px;' }, cards);
+        return h(CardRenderer, { arch: cardNode, records: childRecords });
       }
 
-      // 1. Fallback rendering if no nested tree definition is present
-      if (!treeNode) {
-        if (props.readonly) {
-          const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-          return h('div', { class: 'o_field_relational o_readonly' }, spans);
-        }
-
-        const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-        const addBtn = h('button', {
-          type: 'button',
-          class: 'o_btn o_btn_secondary',
-          onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
-        }, '+ Add Item');
-
-        return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
+      // Fallback rendering if no nested subview is configured
+      if (props.readonly) {
+        const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+        return h('div', { class: 'o_field_relational o_readonly' }, spans);
       }
 
-      // 2. High-fidelity dynamic list sub-view rendering
-      const fields = (treeNode.children || []).filter((c: any) => c.tag === 'field');
-      const editable = treeNode.attrs?.editable;
+      const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+      const addBtn = h('button', {
+        type: 'button',
+        class: 'o_btn o_btn_secondary',
+        onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
+      }, '+ Add Item');
 
-      const ths = fields.map((f: any) => h('th', f.attrs?.string || f.attrs?.name || ''));
-      const thead = h('thead', null, h('tr', null, ths));
-
-      const rows = childRecords.map((childRec: any) => {
-        const tds = fields.map((f: any) => {
-          const fieldName = f.attrs.name;
-          if (editable && !props.readonly) {
-            const widgetName = f.attrs.widget || 'char';
-            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
-            return h('td', null, h(widgetComp, {
-              record: childRec,
-              name: fieldName,
-              readonly: false
-            }));
-          } else {
-            const cellVal = childRec?.get ? childRec.get(fieldName) : (childRec[fieldName] || '');
-            return h('td', null, h('span', { class: 'o_cell_value' }, String(cellVal)));
-          }
-        });
-
-        return h('tr', {
-          onClick: () => {
-            if (!editable && actionManager) {
-              actionManager.doAction({
-                name: 'Edit Relation Record',
-                res_model: 'sub.model',
-                type: 'ir.actions.act_window',
-                views: [[false, 'form']],
-                target: 'new',
-                res_id: childRec.id
-              });
-            }
-          }
-        }, tds);
-      });
-
-      const tbody = h('tbody', null, rows);
-      return h('table', { class: 'o_list_view o_subview_list' }, [thead, tbody]);
+      return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
     };
   }
 });
@@ -406,106 +333,33 @@ export const FieldMany2many = defineComponent({
     subViews: { type: Array, default: () => [] }
   },
   setup(props) {
-    const actionManager = inject(ACTION_MANAGER_KEY, null);
-
     return () => {
-      const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list') as any;
-      const cardNode = (props.subViews || []).find((v: any) => v.tag === 'card') as any;
+      const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list');
+      const cardNode = (props.subViews || []).find((v: any) => v.tag === 'card');
       const val = props.record?.get(props.name) || [];
       const childRecords = Array.isArray(val) ? val : [];
 
-      // Render modern Card Grid Layout if card view is configured
+      if (treeNode) {
+        return h(ListRenderer, { arch: treeNode, records: childRecords });
+      }
+
       if (cardNode) {
-        const cardFields = (cardNode.children || []).filter((c: any) => c.tag === 'field');
-        const cards = childRecords.map((childRec: any) => {
-          const fieldsVNodes = cardFields.map((f: any) => {
-            const fieldName = f.attrs.name;
-            const widgetName = f.attrs.widget || 'char';
-            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
-            return h('div', { class: 'o_card_field', style: 'margin-bottom: 4px;' }, [
-              h('strong', { style: 'margin-right: 4px;' }, f.attrs?.string || fieldName),
-              h(widgetComp, { record: childRec, name: fieldName, readonly: true })
-            ]);
-          });
-
-          return h('div', {
-            class: 'o_subview_card',
-            style: 'border: 1px solid #ddd; padding: 12px; border-radius: 6px; flex: 1 1 200px; cursor: pointer;',
-            onClick: () => {
-              if (actionManager) {
-                actionManager.doAction({
-                  name: 'Edit Relation Card',
-                  res_model: 'sub.model',
-                  type: 'ir.actions.act_window',
-                  views: [[false, 'form']],
-                  target: 'new',
-                  res_id: childRec.id
-                });
-              }
-            }
-          }, fieldsVNodes);
-        });
-
-        return h('div', { class: 'o_card_grid', style: 'display: flex; flex-wrap: wrap; gap: 12px;' }, cards);
+        return h(CardRenderer, { arch: cardNode, records: childRecords });
       }
 
-      if (!treeNode) {
-        if (props.readonly) {
-          const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-          return h('div', { class: 'o_field_relational o_readonly' }, spans);
-        }
-
-        const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
-        const addBtn = h('button', {
-          type: 'button',
-          class: 'o_btn o_btn_secondary',
-          onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
-        }, '+ Link Item');
-
-        return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
+      if (props.readonly) {
+        const spans = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+        return h('div', { class: 'o_field_relational o_readonly' }, spans);
       }
 
-      const fields = (treeNode.children || []).filter((c: any) => c.tag === 'field');
-      const editable = treeNode.attrs?.editable;
+      const tags = childRecords.map((item: any) => h('span', { class: 'o_tag', style: 'margin-right: 5px' }, String(item.id || item)));
+      const addBtn = h('button', {
+        type: 'button',
+        class: 'o_btn o_btn_secondary',
+        onClick: () => props.record?.set(props.name, [...childRecords, childRecords.length + 1])
+      }, '+ Link Item');
 
-      const ths = fields.map((f: any) => h('th', f.attrs?.string || f.attrs?.name || ''));
-      const thead = h('thead', null, h('tr', null, ths));
-
-      const rows = childRecords.map((childRec: any) => {
-        const tds = fields.map((f: any) => {
-          const fieldName = f.attrs.name;
-          if (editable && !props.readonly) {
-            const widgetName = f.attrs.widget || 'char';
-            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
-            return h('td', null, h(widgetComp, {
-              record: childRec,
-              name: fieldName,
-              readonly: false
-            }));
-          } else {
-            const cellVal = childRec?.get ? childRec.get(fieldName) : (childRec[fieldName] || '');
-            return h('td', null, h('span', { class: 'o_cell_value' }, String(cellVal)));
-          }
-        });
-
-        return h('tr', {
-          onClick: () => {
-            if (!editable && actionManager) {
-              actionManager.doAction({
-                name: 'Edit Relation Record',
-                res_model: 'sub.model',
-                type: 'ir.actions.act_window',
-                views: [[false, 'form']],
-                target: 'new',
-                res_id: childRec.id
-              });
-            }
-          }
-        }, tds);
-      });
-
-      const tbody = h('tbody', null, rows);
-      return h('table', { class: 'o_list_view o_subview_list' }, [thead, tbody]);
+      return h('div', { class: 'o_field_relational' }, [tags, addBtn]);
     };
   }
 });

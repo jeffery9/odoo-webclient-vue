@@ -1,6 +1,7 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, inject } from 'vue';
 import { Modifier } from '@odoo/sdk';
 import { componentRegistry } from './registry.js';
+import { ACTION_MANAGER_KEY } from './di.js';
 
 export const ListRenderer = defineComponent({
   props: {
@@ -8,20 +9,95 @@ export const ListRenderer = defineComponent({
     records: { type: Array, required: true }
   },
   setup(props) {
+    const actionManager = inject(ACTION_MANAGER_KEY, null);
+
     return () => {
       const archFields = (props.arch?.children || []).filter((child: any) => child.tag === 'field');
+      const editable = props.arch?.attrs?.editable;
 
       const thVNodes = archFields.map((f: any) => h('th', f.attrs?.string || f.attrs?.name || ''));
       const trHeader = h('tr', null, thVNodes);
       const thead = h('thead', null, trHeader);
 
       const rowVNodes = (props.records || []).map((rec: any) => {
-        const tdVNodes = archFields.map((f: any) => h('td', rec.get(f.attrs.name)));
-        return h('tr', null, tdVNodes);
+        const tdVNodes = archFields.map((f: any) => {
+          const fieldName = f.attrs.name;
+          if (editable) {
+            const widgetName = f.attrs.widget || 'char';
+            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
+            return h('td', null, h(widgetComp, {
+              record: rec,
+              name: fieldName,
+              readonly: false
+            }));
+          } else {
+            const cellVal = rec?.get ? rec.get(fieldName) : (rec[fieldName] || '');
+            return h('td', null, h('span', { class: 'o_cell_value' }, String(cellVal)));
+          }
+        });
+
+        return h('tr', {
+          onClick: () => {
+            if (!editable && actionManager) {
+              actionManager.doAction({
+                name: 'Edit Relation Record',
+                res_model: 'sub.model',
+                type: 'ir.actions.act_window',
+                views: [[false, 'form']],
+                target: 'new',
+                res_id: rec.id
+              });
+            }
+          }
+        }, tdVNodes);
       });
       const tbody = h('tbody', null, rowVNodes);
 
-      return h('table', null, [thead, tbody]);
+      return h('table', { class: 'o_list_view o_subview_list' }, [thead, tbody]);
+    };
+  }
+});
+
+export const CardRenderer = defineComponent({
+  props: {
+    arch: { type: Object, required: true },
+    records: { type: Array, required: true }
+  },
+  setup(props) {
+    const actionManager = inject(ACTION_MANAGER_KEY, null);
+
+    return () => {
+      const cardFields = (props.arch?.children || []).filter((c: any) => c.tag === 'field');
+      const cards = (props.records || []).map((childRec: any) => {
+        const fieldsVNodes = cardFields.map((f: any) => {
+          const fieldName = f.attrs.name;
+          const widgetName = f.attrs.widget || 'char';
+          const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
+          return h('div', { class: 'o_card_field', style: 'margin-bottom: 4px;' }, [
+            h('strong', { style: 'margin-right: 4px;' }, f.attrs?.string || fieldName),
+            h(widgetComp, { record: childRec, name: fieldName, readonly: true })
+          ]);
+        });
+
+        return h('div', {
+          class: 'o_subview_card',
+          style: 'border: 1px solid #ddd; padding: 12px; border-radius: 6px; flex: 1 1 200px; cursor: pointer;',
+          onClick: () => {
+            if (actionManager) {
+              actionManager.doAction({
+                name: 'Edit Relation Card',
+                res_model: 'sub.model',
+                type: 'ir.actions.act_window',
+                views: [[false, 'form']],
+                target: 'new',
+                res_id: childRec.id
+              });
+            }
+          }
+        }, fieldsVNodes);
+      });
+
+      return h('div', { class: 'o_card_grid', style: 'display: flex; flex-wrap: wrap; gap: 12px;' }, cards);
     };
   }
 });
