@@ -257,3 +257,23 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 
 ### Task 15.2: Server-Side Warnings & Constraint Violation Overlays
 - [ ] Capture and deserialize `/web/dataset/call_kw` execution warning envelopes (`{'warning': {'title': '...', 'message': '...'}}`), automatically rendering rich interactive Odoo-branded toast notifications or overlay modals instead of silent failures.
+
+---
+
+## 🌌 Phase 16: Advanced Breadcrumb Context Inheritance & Multi-Database Discovery
+
+### Task 16.1: Breadcrumb Context State & Active ID Inheritance
+- [ ] Implement historical breadcrumb data caching, ensuring that returning to parent breadcrumbs (e.g., `Partners / Mitchell Admin / 3 Purchase Orders`) reactively inherits contextual active parameters (e.g., `active_id=Mitchell Admin`) and dynamic filters, preventing state loss during nested action stack pops.
+
+### Task 16.2: Dynamic Multi-Tenant Database Discovery & Portal Hardening
+- [ ] Enhance the login connector to dynamically fetch available databases via `/web/database/list` RPC, rendering a smart selection dropdown on the portal screen while hardening JWT/Session cookie rotation for multi-tenant isolation.
+
+---
+
+## ⚙️ Phase 17: Collaborative Real-Time Concurrency Locks & PDF Previews
+
+### Task 17.1: Real-Time Edit Collisions Lock Warning (Presence Bus)
+- [ ] Hook into the `OdooBusClient` WebSocket stream to track active user presence, automatically rendering a collaborative warning banner (e.g., "User B is currently editing this record") upon record-level resource lock collisions.
+
+### Task 17.2: In-Browser PDF Report Previewer Overlay
+- [ ] Enhance `ir.actions.report` handler to render a beautifully styled, high-performance in-browser PDF previewer overlay (utilizing a light PDF.js or object iframe) supporting zoom, page navigation, and print spooling directly within the workspace.
