@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeAll } from 'vitest';
 import { activeClient } from '../src/auth/state.js';
 import { ActionManager } from '@odoo/sdk';
 import { executeAction, resolveDefaultViewType } from '../src/workspace/actions.js';
-import { activeAction, activeViewType, activeContext } from '../src/workspace/state.js';
+import { activeAction, activeViewType, activeContext, viewArchs } from '../src/workspace/state.js';
 
 describe('Odoo Action Execution Service', () => {
   beforeAll(() => {
@@ -38,6 +38,16 @@ describe('Odoo Action Execution Service', () => {
             name: 'Invoices Printout',
             context: {}
           };
+        } else if (actionId === 40) {
+          return {
+            id: 40,
+            type: 'ir.actions.act_window',
+            res_model: 'res.partner',
+            name: 'Sales Analysis Dashboard',
+            view_mode: 'graph,pivot,calendar',
+            context: {},
+            domain: []
+          };
         }
         return null;
       },
@@ -46,7 +56,9 @@ describe('Odoo Action Execution Service', () => {
           fields_views: {
             list: { arch: '<tree><field name="name"/></tree>' },
             form: { arch: '<form><field name="name"/></form>' },
-            kanban: { arch: '<kanban><field name="name"/></kanban>' }
+            kanban: { arch: '<kanban><field name="name"/></kanban>' },
+            graph: { arch: '<graph string="Sales Analysis"><field name="user_id" type="row"/></graph>' },
+            pivot: { arch: '<pivot string="Invoices Analysis"><field name="category_id" type="col"/></pivot>' }
           }
         };
       },
@@ -140,5 +152,24 @@ describe('Odoo Action Execution Service', () => {
     
     expect(parsedData[0]).toBe('/report/pdf/sale.report_saleproceeded/5,12');
     expect(parsedData[1]).toBe('pdf');
+  });
+
+  test('should load and dynamically compile graph and pivot advanced view types', async () => {
+    await executeAction(40);
+
+    // activeViewType resolves to 'graph' which is the first mode in action view_mode
+    expect(activeViewType.value).toBe('graph');
+
+    // Graph arch should be successfully compiled into semantic AST
+    expect(viewArchs.value.graph).toBeDefined();
+    expect(viewArchs.value.graph.tag).toBe('graph');
+    expect(viewArchs.value.graph.attrs.string).toBe('Sales Analysis');
+    expect(viewArchs.value.graph.children[0].tag).toBe('field');
+    expect(viewArchs.value.graph.children[0].attrs.name).toBe('user_id');
+
+    // Pivot arch should be successfully compiled into semantic AST
+    expect(viewArchs.value.pivot).toBeDefined();
+    expect(viewArchs.value.pivot.tag).toBe('pivot');
+    expect(viewArchs.value.pivot.attrs.string).toBe('Invoices Analysis');
   });
 });

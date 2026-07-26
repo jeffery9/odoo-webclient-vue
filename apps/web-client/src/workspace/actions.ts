@@ -16,7 +16,9 @@ import {
   formArch,
   kanbanArch,
   searchArch,
-  searchPanelDomain
+  searchPanelDomain,
+  viewArchs,
+  OdooViewType
 } from './state.js';
 
 export const executeAction = async (actionId: number, options?: { resetOffset?: boolean }) => {
@@ -57,18 +59,13 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
     }
     const model = action.res_model;
 
-    // Load search view alongside regular views to extract search panels
-    const viewsToLoad: [number | boolean, string][] = [
-      ...(action.views || [[false, 'list'], [false, 'form'], [false, 'kanban']]),
-      [false, 'search']
-    ];
+    // Load all views declared in action dynamically, along with the search view
+    const viewModes = action.view_mode ? action.view_mode.split(',').map((m: string) => m.trim()) : ['list', 'form', 'kanban'];
+    const viewsToLoad: [number | boolean, string][] = viewModes.map((m: string) => [false, m === 'list' ? 'tree' : m]);
+    viewsToLoad.push([false, 'search']);
+
     const viewsResponse = await activeClient.value.loadViews(model, viewsToLoad);
     const viewsMap = viewsResponse?.fields_views || {};
-
-    const rawListXml = viewsMap.list?.arch || viewsMap.tree?.arch || '';
-    const rawFormXml = viewsMap.form?.arch || '';
-    const rawKanbanXml = viewsMap.kanban?.arch || '';
-    const rawSearchXml = viewsMap.search?.arch || '';
 
     // Merge search panel domain filters with base action domain
     const domain = [...(action.domain || []), ...searchPanelDomain.value];
@@ -84,10 +81,20 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
       activeContext.value
     );
 
-    if (rawListXml) listArch.value = ArchCompiler.compile(rawListXml);
-    if (rawFormXml) formArch.value = ArchCompiler.compile(rawFormXml);
-    if (rawKanbanXml) kanbanArch.value = ArchCompiler.compile(rawKanbanXml);
-    if (rawSearchXml) searchArch.value = ArchCompiler.compile(rawSearchXml);
+    // Dynamic compilation of all loaded views
+    viewArchs.value = {};
+    for (const [vType, vData] of Object.entries(viewsMap)) {
+      const xmlArch = (vData as any)?.arch || '';
+      if (xmlArch) {
+        const targetType = vType === 'tree' ? 'list' : vType;
+        const compiled = ArchCompiler.compile(xmlArch);
+        if (targetType === 'search') {
+          searchArch.value = compiled;
+        } else {
+          viewArchs.value[targetType] = compiled;
+        }
+      }
+    }
 
     const proxies = recordsData.map((d: any) => new RecordProxy(model, d, activeClient.value!));
     partnerRecords.splice(0, partnerRecords.length, ...proxies);
@@ -150,7 +157,7 @@ export const discardChanges = () => {
   readonlyMode.value = true;
 };
 
-export const resolveDefaultViewType = (action: any): 'list' | 'kanban' | 'form' => {
+export const resolveDefaultViewType = (action: any): OdooViewType => {
   if (!action) return 'list';
 
   // Support comma-separated view_mode (e.g., 'kanban,tree,form')
@@ -158,19 +165,14 @@ export const resolveDefaultViewType = (action: any): 'list' | 'kanban' | 'form' 
     const modes = action.view_mode.split(',').map((m: string) => m.trim());
     for (const m of modes) {
       if (m === 'tree' || m === 'list') return 'list';
-      if (m === 'kanban') return 'kanban';
-      if (m === 'form') return 'form';
+      return m as OdooViewType;
     }
   }
 
   // Fallback to views array list if available
-  if (Array.isArray(action.views)) {
-    for (const v of action.views) {
-      const type = v[1];
-      if (type === 'tree' || type === 'list') return 'list';
-      if (type === 'kanban') return 'kanban';
-      if (type === 'form') return 'form';
-    }
+  if (Array.isArray(action.views) && action.views.length > 0) {
+    const firstType = action.views[0][1];
+    return firstType === 'tree' ? 'list' : (firstType as OdooViewType);
   }
 
   return 'list';
