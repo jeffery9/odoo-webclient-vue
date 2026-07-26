@@ -29,6 +29,25 @@ describe('Odoo Field Lifecycles & Relational Serializers', () => {
       expect(Fields.Boolean.format(true)).toBe('Yes');
       expect(Fields.Boolean.format(false)).toBe('No');
     });
+
+    test('should parse and format Text/Html/Monetary correctly', () => {
+      expect(Fields.Text.parse('Multi\nLine')).toBe('Multi\nLine');
+      expect(Fields.Html.parse('<p>Hello</p>')).toBe('<p>Hello</p>');
+      expect(Fields.Monetary.parse('150.75')).toBe(150.75);
+    });
+
+    test('should parse and format Selection correctly', () => {
+      expect(Fields.Selection.parse('draft')).toBe('draft');
+      expect(Fields.Selection.format('done')).toBe('done');
+    });
+
+    test('should parse Date and Datetime correctly', () => {
+      const mockDate = new Date('2026-07-26T12:00:00.000Z');
+      expect(Fields.Date.parse(mockDate)).toBe('2026-07-26');
+      expect(Fields.Date.parse('2026-07-26 12:00:00')).toBe('2026-07-26');
+
+      expect(Fields.Datetime.parse(mockDate)).toBe('2026-07-26 12:00:00');
+    });
   });
 
   describe('Relational Field Serializers', () => {
@@ -37,6 +56,13 @@ describe('Odoo Field Lifecycles & Relational Serializers', () => {
       expect(Fields.Many2one.serialize([5, 'YourCompany'])).toBe(5);
       expect(Fields.Many2one.serialize(12)).toBe(12);
       expect(Fields.Many2one.serialize(null)).toBe(false);
+    });
+
+    test('should serialize One2many relation commands correctly', () => {
+      expect(Fields.One2many.replaceWith([1, 2])).toEqual([[6, 0, [1, 2]]]);
+      expect(Fields.One2many.add({ name: 'Subtask' })).toEqual([[0, 0, { name: 'Subtask' }]]);
+      expect(Fields.One2many.update(5, { name: 'New' })).toEqual([[1, 5, { name: 'New' }]]);
+      expect(Fields.One2many.remove(10)).toEqual([[2, 10, 0]]);
     });
 
     test('should serialize Many2many relation commands correctly', () => {
