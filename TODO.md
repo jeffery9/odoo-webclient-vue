@@ -277,3 +277,26 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 
 ### Task 17.2: In-Browser PDF Report Previewer Overlay
 - [ ] Enhance `ir.actions.report` handler to render a beautifully styled, high-performance in-browser PDF previewer overlay (utilizing a light PDF.js or object iframe) supporting zoom, page navigation, and print spooling directly within the workspace.
+
+---
+
+## 🌌 Phase 18: Action Redirections & Dynamic Context Prefill
+
+### Task 18.1: Action Redirection `default_` Context Parsing
+- [ ] Implement prefill logic in `ActionManager` and the ORM record instantiation runtime, ensuring that active action context parameters prefixed with `default_` are parsed and dynamically loaded into newly initialized `RecordProxy` instances.
+
+### Task 18.2: Special Context Keys Parsing & View Control (`search_default_`, `group_by`, `active_test`)
+- [ ] Parse and evaluate special context keys:
+  - `search_default_xxx`: Pre-activate corresponding filter toggles in the SearchPanel.
+  - `group_by`: Force clustering of List/Kanban columns on the specified field.
+  - `active_test`: Map `active_test=False` to RPC `search_read` params to query soft-deleted records.
+
+---
+
+## ⚙️ Phase 19: Relational Field Domain Sandboxing & Dynamic Fields Meta-Attributes
+
+### Task 19.1: Dynamic Context Sandbox for Autocomplete Autolookups
+- [ ] Implement sandbox context evaluation during many2one search/autocomplete (`name_search`), ensuring dynamic domain constraints and context values declared on field XML tags are evaluated in real-time against active record proxy states.
+
+### Task 19.2: Dynamic Fields Meta-Attributes Resolution (`fields_get` / `get_views` compatibility layer)
+- [ ] Support dynamic resolution of field attributes (e.g., string labels, options selection list, model relations) mapping custom ORM runtime modifications to `fields_get` or model meta-responses directly to UI rendering states.
