@@ -126,6 +126,11 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [ ] Support `decoration-*` attributes (e.g., `decoration-danger`, `decoration-muted`) for dynamic row styling based on record state in lists.
 - [ ] Implement `editable="top|bottom"` for inline list editing without opening a form view.
 
+### Task 7.5: Analytics & Search View Semantics (per `graph_view.rng`, `pivot_view.rng`, `search_view.rng`)
+- [ ] Graph: Support `type="bar|pie|line"`, `stacked`, and `cumulated` attributes for advanced charts.
+- [ ] Pivot: Support `disable_linking`, `display_quantity`, and dynamic measurement aggregations.
+- [ ] Search: Fully align `<searchpanel>` and hierarchical `<filter>` semantics to standard Odoo behaviors.
+
 ---
 
 ## ⚙️ Phase 8: View State Management & Finite-State Controls
