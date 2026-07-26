@@ -67,7 +67,7 @@ export class RecordProxy {
     this._changes = {};
   }
 
-  async save(): Promise<void> {
+  async save(context?: any): Promise<void> {
     if (!this.isDirty) return;
 
     if (!this.client) {
@@ -76,11 +76,14 @@ export class RecordProxy {
 
     const id = this.id;
     if (id !== null) {
-      await this.client.write(this.model, [id], this._changes);
+      await this.client.write(this.model, [id], this._changes, context);
       Object.assign(this._data, this._changes);
       this._changes = {};
     } else {
-      const newId = await this.client.create(this.model, this._changes);
+      // Merge initial defaults inside _data with dirty changes inside _changes for new record creations
+      const creationValues = { ...this._data, ...this._changes };
+      delete creationValues.id; // Ensure raw null id is omitted
+      const newId = await this.client.create(this.model, creationValues, context);
       this._data.id = newId;
       Object.assign(this._data, this._changes);
       this._changes = {};

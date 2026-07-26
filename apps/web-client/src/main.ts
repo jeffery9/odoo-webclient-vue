@@ -1,5 +1,5 @@
 import { createApp, h, reactive, ref, computed, onMounted } from 'vue';
-import { RecordProxy, HashRouter, RPCClient, SessionManager, ArchCompiler } from '@odoo/sdk';
+import { RecordProxy, HashRouter, RPCClient, SessionManager, ArchCompiler, Context } from '@odoo/sdk';
 import { ListRenderer, FormRenderer } from '@odoo/vue-runtime';
 import { getSavedConfig, saveConfig, isOdooAddonMode } from './config.js';
 
@@ -14,6 +14,7 @@ const menus = ref<any[]>([]);
 const activeMenu = ref<any>(null);
 const activeMenuName = ref('');
 const activeAction = ref<any>(null);
+const activeContext = ref<Record<string, any>>({});
 
 const partnerRecords = reactive<RecordProxy[]>([]);
 const activeViewType = ref<'list' | 'kanban' | 'form'>('list');
@@ -94,6 +95,13 @@ const App = {
         }
         const model = action.res_model;
 
+        // Evaluate action context (merging with standard context layers)
+        const evaluatedContext = Context.merge(
+          [action.context],
+          { uid: (activeClient.value as any).uid || 1 }
+        );
+        activeContext.value = evaluatedContext;
+
         const viewsToLoad: [number | boolean, string][] = action.views || [[false, 'list'], [false, 'form'], [false, 'kanban']];
         const viewsResponse = await activeClient.value.loadViews(model, viewsToLoad);
         const viewsMap = viewsResponse?.fields_views || {};
@@ -103,7 +111,7 @@ const App = {
         const rawKanbanXml = viewsMap.kanban?.arch || '';
 
         const domain = action.domain || [];
-        totalRecordsCount.value = await activeClient.value.call(model, 'search_count', [domain], {});
+        totalRecordsCount.value = await activeClient.value.call(model, 'search_count', [domain], { context: activeContext.value });
 
         const fieldsToSelect: string[] = ['name', 'active'];
         const recordsData = await activeClient.value.search_read(
@@ -111,7 +119,8 @@ const App = {
           domain,
           fieldsToSelect,
           currentLimit.value,
-          currentOffset.value
+          currentOffset.value,
+          activeContext.value
         );
 
         activeAction.value = action;
@@ -281,8 +290,24 @@ const App = {
 
     const handleCreate = () => {
       const model = activeAction.value?.res_model || 'res.partner';
+      
+      // Pre-populate default values from action context (default_ prefix scanning)
+      const defaultValues: Record<string, any> = {};
+      if (activeContext.value) {
+        for (const [key, value] of Object.entries(activeContext.value)) {
+          if (key.startsWith('default_')) {
+            const fieldName = key.substring(8); // Strip 'default_'
+            defaultValues[fieldName] = value;
+          }
+        }
+      }
+
       if (activeClient.value) {
-        selectedRecord.value = new RecordProxy(model, { id: null, name: 'New Record' }, activeClient.value);
+        selectedRecord.value = new RecordProxy(
+          model,
+          { id: null, name: 'New Record', ...defaultValues },
+          activeClient.value
+        );
       }
       activeViewType.value = 'form';
       readonlyMode.value = false;
@@ -295,9 +320,9 @@ const App = {
 
     const saveChanges = async () => {
       try {
-        if (selectedRecord.value?.client) {
+        if (selectedRecord.value) {
           const isNew = selectedRecord.value.id === null;
-          await selectedRecord.value.save();
+          await selectedRecord.value.save(activeContext.value);
           if (isNew) {
             partnerRecords.push(selectedRecord.value);
           }

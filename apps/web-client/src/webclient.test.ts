@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { RecordProxy, RPCClient, SessionManager, ArchCompiler } from '@odoo/sdk';
+import { RecordProxy, RPCClient, SessionManager, ArchCompiler, Context } from '@odoo/sdk';
 
 describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
   test('should execute full dynamic sequence: login -> load_menus -> load_action -> load_views -> compile -> search_read', async () => {
@@ -145,5 +145,55 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     } else {
       delete (global as any).window;
     }
+  });
+
+  test('should parse action context, pre-populate default fields, and forward context kwargs during write/create', async () => {
+    const client = new RPCClient({ endpoint: 'http://localhost:8069' });
+    const createSpy = vi.spyOn(client, 'create').mockResolvedValue(99);
+
+    // 1. Mock an Action containing custom Odoo Context
+    const mockAction = {
+      id: 202,
+      name: 'Dynamic Action',
+      res_model: 'res.partner',
+      context: "{'default_active': False, 'default_customer': True, 'default_type': 'contact'}"
+    };
+
+    // 2. Parse and evaluate Odoo context string
+    const evaluatedContext = Context.merge([mockAction.context], { uid: 1 });
+    expect(evaluatedContext.default_active).toBe(false);
+    expect(evaluatedContext.default_customer).toBe(true);
+    expect(evaluatedContext.default_type).toBe('contact');
+
+    // 3. Scan default_ keys to pre-populate record proxies
+    const defaultValues: Record<string, any> = {};
+    for (const [key, value] of Object.entries(evaluatedContext)) {
+      if (key.startsWith('default_')) {
+        const fieldName = key.substring(8);
+        defaultValues[fieldName] = value;
+      }
+    }
+
+    expect(defaultValues).toEqual({
+      active: false,
+      customer: true,
+      type: 'contact'
+    });
+
+    const newRecord = new RecordProxy('res.partner', { id: null, name: 'New Record', ...defaultValues }, client);
+    expect(newRecord.get('active')).toBe(false);
+    expect(newRecord.get('customer')).toBe(true);
+    expect(newRecord.get('type')).toBe('contact');
+
+    // 4. Save and verify context parameter is passed down to RPCClient.create kwargs
+    newRecord.set('name', ' Mitchell Admin (Saved)');
+    await newRecord.save(evaluatedContext);
+
+    expect(createSpy).toHaveBeenCalledWith('res.partner', {
+      name: ' Mitchell Admin (Saved)',
+      active: false,
+      customer: true,
+      type: 'contact'
+    }, evaluatedContext);
   });
 });

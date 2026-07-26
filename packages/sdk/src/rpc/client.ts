@@ -124,16 +124,16 @@ export class RPCClient {
     return this.call(model, 'read', [ids], { fields });
   }
 
-  async create(model: string, vals: Record<string, any>): Promise<number> {
-    return this.call(model, 'create', [vals], {});
+  async create(model: string, vals: Record<string, any>, context?: any): Promise<number> {
+    return this.call(model, 'create', [vals], { context });
   }
 
-  async write(model: string, ids: number[], vals: Record<string, any>): Promise<boolean> {
-    return this.call(model, 'write', [ids, vals], {});
+  async write(model: string, ids: number[], vals: Record<string, any>, context?: any): Promise<boolean> {
+    return this.call(model, 'write', [ids, vals], { context });
   }
 
-  async unlink(model: string, ids: number[]): Promise<boolean> {
-    return this.call(model, 'unlink', [ids], {});
+  async unlink(model: string, ids: number[], context?: any): Promise<boolean> {
+    return this.call(model, 'unlink', [ids], { context });
   }
 
   async search_read(
@@ -141,9 +141,10 @@ export class RPCClient {
     domain: any[],
     fields?: string[],
     limit?: number,
-    offset?: number
+    offset?: number,
+    context?: any
   ): Promise<any[]> {
-    return this.call(model, 'search_read', [], { domain, fields, limit, offset });
+    return this.call(model, 'search_read', [], { domain, fields, limit, offset, context });
   }
 
   private static parseError(error: any): Error {
