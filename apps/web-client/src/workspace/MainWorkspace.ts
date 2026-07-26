@@ -13,6 +13,7 @@ import { RecordProxy } from '@odoo/sdk';
 import { activeMenu } from '../layout/state.js';
 import { isConnecting } from '../auth/state.js';
 import { SearchPanel } from './SearchPanel.js';
+import { PremiumAdvancedSearchBar } from './PremiumAdvancedSearchBar.js';
 import { addNotification } from '../layout/notification.js';
 import {
   activeViewType,
@@ -158,6 +159,12 @@ export const MainWorkspace = {
               }, isPrinting.value ? 'Compiling PDF...' : 'Print Report (PDF)')
             ])
           ]) : null,
+
+          // Render Chinese Premium Advanced Search Bar (only for window actions when view is not form)
+          !isConnecting.value && (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value !== 'form' ? h(PremiumAdvancedSearchBar, {
+            arch: searchArch.value,
+            onSearch: handleFilterChange
+          }) : null,
 
           // 3. Act Window - List Rendering
           !isConnecting.value && (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value === 'list' ? h('div', null, [
