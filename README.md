@@ -79,10 +79,12 @@ npm run build
 
 The master roadmap for this project is hosted directly in **[TODO.md](./TODO.md)**. We are currently implementing **Phase 7 (Layout Semantic Alignment)** and **Phase 8 (View State & Controls)**. 
 
-We warmly welcome contributions! Please read our quickstart guidelines and submit Pull Requests for any unchecked items in the `TODO.md` backlog.
+We warmly welcome contributions! To protect the project's ownership and preserve the ability to dual-license or commercially package this client in the future, all contributors are required to read and accept our **[Contributor License Agreement (CLA)](./CLA.md)** before any Pull Request can be merged.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the **GNU Affero General Public License v3 (AGPL-3.0-or-later)** - see the **[LICENSE](./LICENSE)** file for details. 
+
+The original creator and copyright owner (Jeffery) retains full commercial sublicensing rights and is not bound by this license, permitting unrestricted proprietary SaaS hosting and dual-license distribution.
