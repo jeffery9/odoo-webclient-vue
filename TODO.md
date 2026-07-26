@@ -80,8 +80,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ## 🎨 Phase 5: Vue Rendering Layer (Vue-Runtime)
 
 ### Task 5.1: Registry & DI Bus
-- [ ] Implement Component Registry mapped to standard Odoo widget mappings (e.g., `widget="many2one"` -> `FieldMany2one`).
-- [ ] Set up Vue `provide/inject` boundaries for global services (notification system, dialog modals).
+- [x] Implement Component Registry mapped to standard Odoo widget mappings (e.g., `widget="many2one"` -> `FieldMany2one`).
+- [x] Set up Vue `provide/inject` boundaries for global services (notification system, dialog modals).
 
 ### Task 5.2: View Renderers
 - [ ] Implement `ListRenderer` converting List Semantic JSON IR into table layouts with pager utilities.

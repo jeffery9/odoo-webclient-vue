@@ -1,2 +1,3 @@
 // Odoo Vue Runtime Entry Point
-export const vuePlaceholder = true;
+export * from './registry.js';
+export * from './di.js';
