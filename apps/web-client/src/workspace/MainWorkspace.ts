@@ -7,6 +7,7 @@ import {
   CalendarRenderer,
   ActivityRenderer,
   GanttRenderer,
+  QWebRenderer,
   rendererRegistry
 } from '@odoo/vue-runtime';
 import { RecordProxy } from '@odoo/sdk';
@@ -249,14 +250,24 @@ export const MainWorkspace = {
               records: filteredRecords.value
             }) : null,
 
+            // Render QWeb view
+            activeViewType.value === 'qweb' ? h(QWebRenderer, {
+              arch: viewArchs.value.qweb,
+              context: {
+                ...activeContext.value,
+                records: filteredRecords.value,
+                selected: selectedRecord.value
+              }
+            }) : null,
+
             // Render Map view
             activeViewType.value === 'map' ? h(rendererRegistry.has('map') ? rendererRegistry.get('map') : null, {
               arch: viewArchs.value.map,
               records: filteredRecords.value
             }) : null,
 
-            // Fallback for other advanced views (e.g. cohort, grid, qweb)
-            !['graph', 'pivot', 'calendar', 'activity', 'gantt', 'map'].includes(activeViewType.value) ? h('div', {
+            // Fallback for other advanced views (e.g. cohort, grid)
+            !['graph', 'pivot', 'calendar', 'activity', 'gantt', 'qweb', 'map'].includes(activeViewType.value) ? h('div', {
               class: 'o_view_nocontent',
               style: 'padding: 40px; text-align: center; color: #475569; background: white; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center;'
             }, [
