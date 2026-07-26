@@ -1,5 +1,6 @@
 import { RecordProxy, ArchCompiler, Context } from '@odoo/sdk';
 import { activeClient, isConnecting } from '../auth/state.js';
+import { addNotification } from '../layout/notification.js';
 import {
   partnerRecords,
   activeAction,
@@ -102,6 +103,8 @@ export const handleCreate = () => {
   }
   activeViewType.value = 'form';
   readonlyMode.value = false;
+
+  addNotification('Pre-populated new record template with contextual defaults.', 'info');
 };
 
 export const saveChanges = async () => {
@@ -112,9 +115,13 @@ export const saveChanges = async () => {
       if (isNew) {
         partnerRecords.push(selectedRecord.value);
       }
+      
+      const recordName = selectedRecord.value.get('name') || selectedRecord.value.get('display_name') || 'New Record';
+      addNotification(`Successfully saved record "${recordName}" to Odoo backend.`, 'success');
     }
     readonlyMode.value = true;
   } catch (err: any) {
+    addNotification(`Odoo Backend Save Error: ${err.message}`, 'error');
     alert('Odoo Backend Save Error: ' + err.message);
   }
 };

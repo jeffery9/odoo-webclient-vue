@@ -1,6 +1,13 @@
-import { createApp, h, onMounted } from 'vue';
+import { createApp, h, onMounted, ref } from 'vue';
 import { RecordProxy, HashRouter, RPCClient } from '@odoo/sdk';
 import { isOdooAddonMode } from './config.js';
+
+import {
+  notifications,
+  unreadCount,
+  markAllAsRead,
+  clearAll,
+} from './layout/notification.js';
 
 // Domain imports
 import {
@@ -49,6 +56,8 @@ const router = new HashRouter();
 const App = {
   name: 'App',
   setup() {
+    const showNotifications = ref(false);
+
     // Dynamic menu bootstrapping
     const bootstrapMenus = async (client: RPCClient) => {
       const [odooMenus] = await Promise.all([
@@ -203,6 +212,10 @@ const App = {
     };
 
     onMounted(async () => {
+      window.addEventListener('click', () => {
+        showNotifications.value = false;
+      });
+
       const initialParams = router.getParams();
       if (Object.keys(initialParams).length > 0) {
         await handleHashNavigation(initialParams);
@@ -231,6 +244,34 @@ const App = {
           isAuthenticated.value
             ? h('button', { class: 'o_connect_btn connected', onClick: handleDisconnect }, '🟢 Connected')
             : null,
+          isAuthenticated.value ? h('div', {
+            class: 'o_navbar_notifications',
+            onClick: (e: any) => {
+              e.stopPropagation();
+              showNotifications.value = !showNotifications.value;
+              if (showNotifications.value) markAllAsRead();
+            }
+          }, [
+            h('span', { style: 'font-size: 18px;' }, '🔔'),
+            unreadCount.value > 0 ? h('span', { class: 'o_notification_badge' }, unreadCount.value) : null,
+            showNotifications.value ? h('div', { class: 'o_notification_dropdown', onClick: (e: any) => e.stopPropagation() }, [
+              h('div', { class: 'o_notification_header' }, [
+                h('span', null, `Notifications (${notifications.value.length})`),
+                h('button', { class: 'o_notification_clear_btn', onClick: () => { clearAll(); showNotifications.value = false; } }, 'Clear All')
+              ]),
+              h('ul', { class: 'o_notification_list' }, 
+                notifications.value.length === 0 
+                  ? [h('div', { class: 'o_notification_empty' }, 'No new activities.')]
+                  : notifications.value.map(n => h('li', { class: ['o_notification_item', n.read ? '' : 'unread'] }, [
+                      h('div', { class: 'o_notification_item_top' }, [
+                        h('span', { style: n.type === 'success' ? 'color: #22c55e; font-weight: bold;' : n.type === 'error' ? 'color: #ef4444; font-weight: bold;' : 'color: #0284c7; font-weight: bold;' }, n.type.toUpperCase()),
+                        h('span', { class: 'o_notification_time' }, n.date)
+                      ]),
+                      h('div', { style: 'margin-top: 4px; line-height: 1.4;' }, n.message)
+                    ]))
+              )
+            ]) : null
+          ]) : null,
           isAuthenticated.value ? h('span', { style: 'font-weight: 500; margin-left: 10px;' }, 'Administrator') : null,
           isAuthenticated.value ? h('div', { class: 'o_user_avatar' }, 'A') : null
         ])

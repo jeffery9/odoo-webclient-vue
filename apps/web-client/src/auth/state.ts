@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { RPCClient, SessionManager } from '@odoo/sdk';
 import { getSavedConfig, saveConfig } from '../config.js';
+import { addNotification } from '../layout/notification.js';
 
 const savedConfig = getSavedConfig();
 
@@ -35,8 +36,11 @@ export const handleConnect = async (onSuccess: (client: RPCClient) => Promise<vo
     isAuthenticated.value = true;
     persistSettings();
 
+    addNotification(`Successfully authenticated session with Odoo database: ${dbName.value}`, 'success');
+
     await onSuccess(client);
   } catch (err: any) {
+    addNotification(`Failed to connect to Odoo backend: ${err.message}`, 'error');
     alert('Failed to connect to Odoo backend: ' + err.message);
   } finally {
     isConnecting.value = false;
@@ -51,6 +55,7 @@ export const handleAddonAutoLogin = async (onSuccess: (client: RPCClient) => Pro
 
     activeClient.value = relativeClient;
     isAuthenticated.value = true;
+    addNotification('Successfully logged in using SSO session credentials.', 'success');
   } catch (err: any) {
     isAuthenticated.value = false;
   } finally {
@@ -61,5 +66,6 @@ export const handleAddonAutoLogin = async (onSuccess: (client: RPCClient) => Pro
 export const handleDisconnectCleanup = (onCleanup: () => void) => {
   isAuthenticated.value = false;
   activeClient.value = null;
+  addNotification('User Administrator logged out of Odoo session.', 'info');
   onCleanup();
 };
