@@ -5,6 +5,8 @@ export class RecordProxy {
   private _data: Record<string, any>;
   private _changes: Record<string, any> = {};
   private client?: RPCClient;
+  private onchangeHandlers: { fields: string[]; handler: (record: RecordProxy) => void }[] = [];
+  private isTriggeringOnchange = false;
 
   constructor(model: string, data: any, client?: RPCClient) {
     this.model = model;
@@ -37,6 +39,24 @@ export class RecordProxy {
     } else {
       this._changes[field] = value;
     }
+
+    // Trigger onchange handlers if we are not already in a triggering loop
+    if (!this.isTriggeringOnchange) {
+      this.isTriggeringOnchange = true;
+      try {
+        for (const { fields, handler } of this.onchangeHandlers) {
+          if (fields.includes(field)) {
+            handler(this);
+          }
+        }
+      } finally {
+        this.isTriggeringOnchange = false;
+      }
+    }
+  }
+
+  registerOnchange(fields: string[], handler: (record: RecordProxy) => void): void {
+    this.onchangeHandlers.push({ fields, handler });
   }
 
   discard(): void {
@@ -52,12 +72,10 @@ export class RecordProxy {
 
     const id = this.id;
     if (id !== null) {
-      // Existing record update
       await this.client.write(this.model, [id], this._changes);
       Object.assign(this._data, this._changes);
       this._changes = {};
     } else {
-      // New record creation
       const newId = await this.client.create(this.model, this._changes);
       this._data.id = newId;
       Object.assign(this._data, this._changes);

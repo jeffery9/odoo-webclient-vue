@@ -55,8 +55,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Set up the memory-level transactional cache for dirty changes (`new`, `dirty`, `deleted`, `pending` states).
 
 ### Task 3.2: Store Integration (Watch Graph)
-- [ ] Create field dependency manager (Watch Graph) resolving computational field triggers.
-- [ ] Implement onchange handlers executing server-side or local dependency recalculations.
+- [x] Create field dependency manager (Watch Graph) resolving computational field triggers.
+- [x] Implement onchange handlers executing server-side or local dependency recalculations.
 
 ### Task 3.3: Field Lifecycle
 - [ ] Implement parser, formatter, and serializer rules for base types: `Char`, `Integer`, `Float`, `Selection`, `Boolean`.
