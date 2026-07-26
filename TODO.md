@@ -134,6 +134,21 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [ ] Pivot: Support `disable_linking`, `display_quantity`, and dynamic measurement aggregations.
 - [ ] Search: Fully align `<searchpanel>` and hierarchical `<filter>` semantics to standard Odoo behaviors.
 
+### Task 7.6: Advanced Form View Semantics (per `form_view.rng`)
+- [ ] Support `<div class="oe_button_box">` for Smart Buttons and `widget="statinfo"`.
+- [ ] Support `<div class="oe_chatter">` for mail threads, followers, and activity rendering.
+- [ ] Render `<separator string="...">` as semantic section dividers within form groups.
+
+### Task 7.7: Advanced List & Kanban Semantics (per `list_view.rng`, `kanban_view.rng`)
+- [ ] List: Support `optional="show|hide"` for dynamic column visibility toggling.
+- [ ] List: Support column footers with aggregates (`sum`, `avg`, `max`, `min`).
+- [ ] List: Support `<control>` elements (Add a line / Add a section / Add a note) for One2many inline editing.
+- [ ] Kanban: Support QWeb `<templates>` evaluation, `kanban_color`, and drag-and-drop state transitions.
+
+### Task 7.8: Advanced Search Semantics (per `search_view.rng`)
+- [ ] Fully implement `<filter>` domain evaluation and `<group expand="1">` for Group By context merging.
+- [ ] Implement SearchBar faceted dropdowns for active filter/group tracking.
+
 ---
 
 ## ⚙️ Phase 8: View State Management & Finite-State Controls
