@@ -237,3 +237,23 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 
 ### Task 13.2: Multi-Company Security Parity & Dynamic Swapping
 - [ ] Implement rigorous request-level context locking to ensure `allowed_company_ids` and `current_company_id` are explicitly injected into every single model write, create, and search_read transaction.
+
+---
+
+## 🌌 Phase 14: Client-Side XML View Inheritances & Localization Catalog
+
+### Task 14.1: Client-Side XPath View Inheritances (`<xpath>`)
+- [ ] Implement client-side XML `<xpath>` processor with position descriptors (`before`, `after`, `replace`, `inside`, `attributes`) to support dynamic local view patching and custom user-level views extension.
+
+### Task 14.2: Dynamic Translation Catalog Injection & PO Parsing
+- [ ] Support loading PO/JSON dynamic translation catalogs from Odoo translation endpoints, auto-localizing compiled JSON view titles, menu items, and field strings dynamically at the rendering layer.
+
+---
+
+## ⚙️ Phase 15: Cross-View Direct Interactions & Server-Side Feedback
+
+### Task 15.1: Kanban Column Group-by Drag-to-Write
+- [ ] Implement reactive Drag-and-Drop between Kanban columns, triggering automated ORM `write` operations to modify the grouping field state (e.g., state, stage_id) and scheduling visual animations.
+
+### Task 15.2: Server-Side Warnings & Constraint Violation Overlays
+- [ ] Capture and deserialize `/web/dataset/call_kw` execution warning envelopes (`{'warning': {'title': '...', 'message': '...'}}`), automatically rendering rich interactive Odoo-branded toast notifications or overlay modals instead of silent failures.
