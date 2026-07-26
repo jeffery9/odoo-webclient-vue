@@ -51,8 +51,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ## 🛢️ Phase 3: Reactive ORM Runtime (Data Engine)
 
 ### Task 3.1: Record & RelationalModel Setup
-- [ ] Define reactive JS Proxy wrappers around standard record fields to enable simple read/write traps.
-- [ ] Set up the memory-level transactional cache for dirty changes (`new`, `dirty`, `deleted`, `pending` states).
+- [x] Define reactive JS Proxy wrappers around standard record fields to enable simple read/write traps.
+- [x] Set up the memory-level transactional cache for dirty changes (`new`, `dirty`, `deleted`, `pending` states).
 
 ### Task 3.2: Store Integration (Watch Graph)
 - [ ] Create field dependency manager (Watch Graph) resolving computational field triggers.
