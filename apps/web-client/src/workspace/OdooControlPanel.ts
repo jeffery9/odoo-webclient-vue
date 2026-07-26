@@ -26,6 +26,7 @@ export const OdooControlPanel = defineComponent({
     // Custom Filter state
     const customFilterField = ref('');
     const customFilterOperator = ref('=');
+    const customFilterValueMode = ref('value'); // 'value' (literal value) or 'field' (compare with another field)
     const customFilterValue = ref('');
     const customFilters = ref<{ field: string; op: string; val: any; label: string }[]>([]);
 
@@ -147,11 +148,21 @@ export const OdooControlPanel = defineComponent({
       const fieldNode = searchFields.value.find((f: any) => f.attrs.name === customFilterField.value);
       const fieldLabel = fieldNode?.attrs?.string || customFilterField.value;
 
+      let val = customFilterValue.value;
+      let label = `${fieldLabel} ${customFilterOperator.value} ${customFilterValue.value}`;
+
+      if (customFilterValueMode.value === 'field') {
+        val = `$field:${customFilterValue.value}`;
+        const compareFieldNode = searchFields.value.find((f: any) => f.attrs.name === customFilterValue.value);
+        const compareFieldLabel = compareFieldNode?.attrs?.string || customFilterValue.value;
+        label = `${fieldLabel} ${customFilterOperator.value} [字段: ${compareFieldLabel}]`;
+      }
+
       customFilters.value.push({
         field: customFilterField.value,
         op: customFilterOperator.value,
-        val: customFilterValue.value,
-        label: `${fieldLabel} ${customFilterOperator.value} ${customFilterValue.value}`
+        val: val,
+        label: label
       });
 
       customFilterValue.value = '';
@@ -366,7 +377,7 @@ export const OdooControlPanel = defineComponent({
 
         // Embedded Custom Filter Form Builder (collapsible dialog look)
         showCustomFilterDialog.value ? h('div', {
-          style: 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; display: flex; gap: 12px; align-items: center; justify-content: flex-start; margin-top: 4px;'
+          style: 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; display: flex; gap: 12px; align-items: center; justify-content: flex-start; margin-top: 4px; flex-wrap: wrap;'
         }, [
           h('span', { style: 'font-size: 13px; font-weight: 500; color: #475569;' }, '自定义条件:'),
           h('el-select', {
@@ -391,13 +402,40 @@ export const OdooControlPanel = defineComponent({
             h('el-option', { label: '包含 (like)', value: 'like' }),
             h('el-option', { label: '不包含 (not like)', value: 'not like' })
           ]),
-          h('el-input', {
-            placeholder: '输入值',
-            modelValue: customFilterValue.value,
-            'onUpdate:modelValue': (val: string) => { customFilterValue.value = val; },
-            size: 'small',
-            style: 'width: 140px;'
-          }),
+
+          // Dynamic value mode switch (Literal vs Field comparison)
+          h('el-radio-group', {
+            modelValue: customFilterValueMode.value,
+            'onUpdate:modelValue': (val: string) => {
+              customFilterValueMode.value = val;
+              customFilterValue.value = '';
+            },
+            size: 'small'
+          }, [
+            h('el-radio-button', { label: 'value' }, '值比较'),
+            h('el-radio-button', { label: 'field' }, '字段比较')
+          ]),
+
+          customFilterValueMode.value === 'field'
+            ? h('el-select', {
+                placeholder: '选择对比字段',
+                modelValue: customFilterValue.value,
+                'onUpdate:modelValue': (val: string) => { customFilterValue.value = val; },
+                size: 'small',
+                style: 'width: 140px;'
+              }, searchFields.value.filter((f: any) => f.attrs.name !== customFilterField.value).map((f: any) => h('el-option', {
+                key: f.attrs.name,
+                label: f.attrs.string || f.attrs.name.toUpperCase(),
+                value: f.attrs.name
+              })))
+            : h('el-input', {
+                placeholder: '输入值',
+                modelValue: customFilterValue.value,
+                'onUpdate:modelValue': (val: string) => { customFilterValue.value = val; },
+                size: 'small',
+                style: 'width: 140px;'
+              }),
+
           h('el-button', { type: 'primary', size: 'small', onClick: addCustomFilter, style: 'background: #714B67; border-color: #714B67;' }, '确定'),
           h('el-button', { size: 'small', onClick: () => { showCustomFilterDialog.value = false; } }, '取消')
         ]) : null

@@ -99,6 +99,20 @@ describe('Odoo Domain Evaluator', () => {
     expect(Domain.evaluate(['amount', '<=', 150.5], record)).toBe(true);
   });
 
+  test('should evaluate field-to-field comparisons using the $field: prefix', () => {
+    const testRecord = {
+      credit: 500,
+      debt: 300,
+      limit: 500,
+      status: 'active',
+      status_alias: 'active'
+    };
+    expect(Domain.evaluate(['credit', '>', '$field:debt'], testRecord)).toBe(true);
+    expect(Domain.evaluate(['credit', '=', '$field:limit'], testRecord)).toBe(true);
+    expect(Domain.evaluate(['debt', '>', '$field:credit'], testRecord)).toBe(false);
+    expect(Domain.evaluate(['status', '=', '$field:status_alias'], testRecord)).toBe(true);
+  });
+
   test('should evaluate in and not in operators', () => {
     expect(Domain.evaluate(['user_id', 'in', [1, 2, 3]], record)).toBe(true);
     expect(Domain.evaluate(['user_id', 'not in', [4, 5]], record)).toBe(true);

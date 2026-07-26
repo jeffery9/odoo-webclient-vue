@@ -84,8 +84,14 @@ export class Domain {
 
   static evaluate(node: DomainNode, record: Record<string, any>): boolean {
     if (Array.isArray(node)) {
-      const [field, op, val] = node;
-      const recordVal = record[field];
+      const [field, op, rawVal] = node;
+      const recordVal = record.get ? record.get(field) : record[field];
+
+      let val = rawVal;
+      if (typeof rawVal === 'string' && rawVal.startsWith('$field:')) {
+        const compareField = rawVal.substring(7);
+        val = record.get ? record.get(compareField) : record[compareField];
+      }
 
       switch (op as string) {
         case '=':
