@@ -72,8 +72,8 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Implement navigation trace utilities (Breadcrumbs) and dialog state stacks.
 
 ### Task 4.2: Router Sync
-- [ ] Map action state and active records (`id`, `view_type`, `model`) to browser URL hashes.
-- [ ] Handle back/forward navigation history state restorations.
+- [x] Map action state and active records (`id`, `view_type`, `model`) to browser URL hashes.
+- [x] Handle back/forward navigation history state restorations.
 
 ---
 
