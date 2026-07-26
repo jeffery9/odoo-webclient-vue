@@ -21,6 +21,78 @@ import {
   OdooViewType
 } from './state.js';
 
+const resolveSafeDomain = async (
+  model: string,
+  domain: any[],
+  client: any,
+  context: any
+): Promise<any[]> => {
+  const fieldCompareTuples: any[] = [];
+  const standardDomain: any[] = [];
+
+  domain.forEach((term) => {
+    if (Array.isArray(term)) {
+      const [field, op, val] = term;
+      if (typeof val === 'string' && val.startsWith('$field:')) {
+        fieldCompareTuples.push(term);
+      } else {
+        standardDomain.push(term);
+      }
+    } else {
+      standardDomain.push(term);
+    }
+  });
+
+  if (fieldCompareTuples.length === 0) {
+    return domain;
+  }
+
+  const involvedFields = new Set<string>(['id']);
+  fieldCompareTuples.forEach(([field, op, val]) => {
+    involvedFields.add(field);
+    involvedFields.add(val.substring(7));
+  });
+
+  try {
+    const rawRecords = await client.search_read(
+      model,
+      standardDomain,
+      Array.from(involvedFields),
+      undefined,
+      undefined,
+      context
+    );
+
+    const matchedIds = rawRecords
+      .filter((rec: any) => {
+        return fieldCompareTuples.every(([field, op, val]) => {
+          const recordVal = rec[field];
+          const compareField = val.substring(7);
+          const compareVal = rec[compareField];
+
+          switch (op) {
+            case '=': return recordVal === compareVal;
+            case '!=': return recordVal !== compareVal;
+            case '>': return recordVal > compareVal;
+            case '>=': return recordVal >= compareVal;
+            case '<': return recordVal < compareVal;
+            case '<=': return recordVal <= compareVal;
+            default: return recordVal === compareVal;
+          }
+        });
+      })
+      .map((r: any) => r.id);
+
+    if (matchedIds.length === 0) {
+      return [['id', '=', 0]];
+    }
+
+    return [['id', 'in', matchedIds]];
+  } catch (e) {
+    return standardDomain;
+  }
+};
+
 export const executeAction = async (actionId: number, options?: { resetOffset?: boolean }) => {
   if (!activeClient.value) return;
   isConnecting.value = true;
@@ -68,7 +140,9 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
     const viewsMap = viewsResponse?.fields_views || {};
 
     // Merge search panel domain filters with base action domain
-    const domain = [...(action.domain || []), ...searchPanelDomain.value];
+    const rawDomain = [...(action.domain || []), ...searchPanelDomain.value];
+    const domain = await resolveSafeDomain(model, rawDomain, activeClient.value, activeContext.value);
+
     totalRecordsCount.value = await activeClient.value.call(model, 'search_count', [domain], { context: activeContext.value });
 
     const fieldsToSelect: string[] = ['name', 'active', 'category_id', 'user_id'];
