@@ -15,10 +15,10 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Write Vitest test suite for prefix array parsing, string parsing, normalization, and evaluation.
 
 ### Task 1.2: Context & Expression Runtime
-- [ ] Implement `Expression.parse(expr: string)` to generate a simple JavaScript-compatible expression tree.
-- [ ] Implement `Expression.evaluate(ast, evaluationEnv)` to evaluate python-like syntax (e.g., `company_id == current_company_id`, `uid`, simple ternary operators).
-- [ ] Implement the layered `Context` merger (`Action -> View -> Field -> User -> Session` to output `effective context`).
-- [ ] Write Vitest test suite verifying context merge priorities and expression evaluation.
+- [x] Implement `Expression.parse(expr: string)` to generate a simple JavaScript-compatible expression tree.
+- [x] Implement `Expression.evaluate(ast, evaluationEnv)` to evaluate python-like syntax (e.g., `company_id == current_company_id`, `uid`, simple ternary operators).
+- [x] Implement the layered `Context` merger (`Action -> View -> Field -> User -> Session` to output `effective context`).
+- [x] Write Vitest test suite verifying context merge priorities and expression evaluation.
 
 ### Task 1.3: Modifier DSL Compiler
 - [ ] Implement `Modifier.compile(attrs: Record<string, any>)` that wraps target rules into evaluated functions.
