@@ -7,7 +7,14 @@ import {
   unreadCount,
   markAllAsRead,
   clearAll,
+  addNotification,
 } from './layout/notification.js';
+
+import {
+  availableCompanies,
+  activeCompany,
+  switchCompany,
+} from './auth/company.js';
 
 // Domain imports
 import {
@@ -57,6 +64,9 @@ const App = {
   name: 'App',
   setup() {
     const showNotifications = ref(false);
+    const showCompanyMenu = ref(false);
+    const showProfileMenu = ref(false);
+    const showDevMenu = ref(false);
 
     // Dynamic menu bootstrapping
     const bootstrapMenus = async (client: RPCClient) => {
@@ -214,6 +224,9 @@ const App = {
     onMounted(async () => {
       window.addEventListener('click', () => {
         showNotifications.value = false;
+        showCompanyMenu.value = false;
+        showProfileMenu.value = false;
+        showDevMenu.value = false;
       });
 
       const initialParams = router.getParams();
@@ -244,11 +257,91 @@ const App = {
           isAuthenticated.value
             ? h('button', { class: 'o_connect_btn connected', onClick: handleDisconnect }, '🟢 Connected')
             : null,
+          
+          // Company Switcher (Multi-Company Selector)
+          isAuthenticated.value ? h('div', {
+            class: 'o_company_switcher',
+            onClick: (e: any) => {
+              e.stopPropagation();
+              showCompanyMenu.value = !showCompanyMenu.value;
+              showNotifications.value = false;
+              showProfileMenu.value = false;
+              showDevMenu.value = false;
+            }
+          }, [
+            h('span', null, `🏢 ${activeCompany.value.name}`),
+            showCompanyMenu.value ? h('ul', { class: 'o_company_dropdown', onClick: (e: any) => e.stopPropagation() },
+              availableCompanies.value.map(c => h('li', {
+                class: ['o_company_item', activeCompany.value.id === c.id ? 'active' : ''],
+                onClick: async () => {
+                  switchCompany(c.id);
+                  showCompanyMenu.value = false;
+                  if (activeAction.value) {
+                    await executeAction(activeAction.value.id, { resetOffset: true });
+                  }
+                }
+              }, [
+                h('span', null, c.name),
+                activeCompany.value.id === c.id ? h('span', { style: 'color: #714B67;' }, '✓') : null
+              ]))
+            ) : null
+          ]) : null,
+
+          // Developer Debug Menu (Beetle Icon Dropdown)
+          isAuthenticated.value ? h('div', {
+            class: 'o_developer_menu_container',
+            onClick: (e: any) => {
+              e.stopPropagation();
+              showDevMenu.value = !showDevMenu.value;
+              showNotifications.value = false;
+              showCompanyMenu.value = false;
+              showProfileMenu.value = false;
+            }
+          }, [
+            h('span', { style: 'font-size: 16px;' }, '🪲'),
+            showDevMenu.value ? h('div', { class: 'o_dev_dropdown', onClick: (e: any) => e.stopPropagation() }, [
+              h('div', { class: 'o_dev_header' }, 'Odoo Developer Debug Tools'),
+              h('a', {
+                class: 'o_dev_item',
+                onClick: () => {
+                  alert(`Active Views AST Info:\n${JSON.stringify({
+                    listArch: listArch.value,
+                    formArch: formArch.value,
+                  }, null, 2)}`);
+                  showDevMenu.value = false;
+                }
+              }, '🖨️ View Fields AST Metadata'),
+              h('a', {
+                class: 'o_dev_item',
+                onClick: () => {
+                  alert(`Context Context State Dump:\n${JSON.stringify({
+                    activeContext: activeContext.value,
+                    company_id: activeCompany.value.id,
+                    limit: currentLimit.value,
+                    offset: currentOffset.value,
+                  }, null, 2)}`);
+                  showDevMenu.value = false;
+                }
+              }, '📋 Dump Active Context State'),
+              h('a', {
+                class: 'o_dev_item',
+                onClick: () => {
+                  addNotification('Developer Cache Cleared Successfully.', 'warning');
+                  showDevMenu.value = false;
+                }
+              }, '⚡ Clear Developer Cache')
+            ]) : null
+          ]) : null,
+
+          // Notifications Bell Widget
           isAuthenticated.value ? h('div', {
             class: 'o_navbar_notifications',
             onClick: (e: any) => {
               e.stopPropagation();
               showNotifications.value = !showNotifications.value;
+              showCompanyMenu.value = false;
+              showProfileMenu.value = false;
+              showDevMenu.value = false;
               if (showNotifications.value) markAllAsRead();
             }
           }, [
@@ -272,8 +365,44 @@ const App = {
               )
             ]) : null
           ]) : null,
-          isAuthenticated.value ? h('span', { style: 'font-weight: 500; margin-left: 10px;' }, 'Administrator') : null,
-          isAuthenticated.value ? h('div', { class: 'o_user_avatar' }, 'A') : null
+
+          // User Profile Menu Selector
+          isAuthenticated.value ? h('div', {
+            class: 'o_user_profile_container',
+            onClick: (e: any) => {
+              e.stopPropagation();
+              showProfileMenu.value = !showProfileMenu.value;
+              showNotifications.value = false;
+              showCompanyMenu.value = false;
+              showDevMenu.value = false;
+            }
+          }, [
+            h('span', { style: 'font-weight: 500;' }, 'Administrator'),
+            h('div', { class: 'o_user_avatar' }, 'A'),
+            showProfileMenu.value ? h('div', { class: 'o_profile_dropdown', onClick: (e: any) => e.stopPropagation() }, [
+              h('a', {
+                class: 'o_profile_item',
+                onClick: () => {
+                  addNotification('User Administrator Profile opened.', 'info');
+                  showProfileMenu.value = false;
+                }
+              }, '👤 My Profile'),
+              h('a', {
+                class: 'o_profile_item',
+                onClick: () => {
+                  addNotification('Preferences settings opened.', 'info');
+                  showProfileMenu.value = false;
+                }
+              }, '⚙️ Preferences'),
+              h('a', {
+                class: 'o_profile_item logout',
+                onClick: () => {
+                  handleDisconnect();
+                  showProfileMenu.value = false;
+                }
+              }, '🚪 Log Out')
+            ]) : null
+          ]) : null
         ])
       ]),
 

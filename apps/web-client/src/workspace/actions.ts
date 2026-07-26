@@ -1,6 +1,7 @@
 import { RecordProxy, ArchCompiler, Context } from '@odoo/sdk';
 import { activeClient, isConnecting } from '../auth/state.js';
 import { addNotification } from '../layout/notification.js';
+import { activeCompany } from '../auth/company.js';
 import {
   partnerRecords,
   activeAction,
@@ -36,7 +37,11 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
       [action.context],
       { uid: (activeClient.value as any).uid || 1 }
     );
-    activeContext.value = evaluatedContext;
+    activeContext.value = {
+      ...evaluatedContext,
+      company_id: activeCompany.value.id,
+      allowed_company_ids: [activeCompany.value.id]
+    };
 
     // Load search view alongside regular views to extract search panels
     const viewsToLoad: [number | boolean, string][] = [

@@ -663,6 +663,158 @@
         font-size: 12px;
       }
 
+      /* Company Switcher Widget */
+      .o_company_switcher {
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 6px 12px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        gap: 6px;
+        transition: background-color 0.1s ease;
+      }
+      .o_company_switcher:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+      .o_company_dropdown {
+        position: absolute;
+        top: 36px;
+        left: 0;
+        width: 180px;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 600;
+        color: #212529;
+        list-style: none;
+        padding: 4px 0;
+        margin: 0;
+      }
+      .o_company_item {
+        padding: 8px 12px;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.1s ease;
+      }
+      .o_company_item:hover {
+        background-color: #f8f9fa;
+      }
+      .o_company_item.active {
+        font-weight: bold;
+        color: #714B67;
+        background-color: #f1f2f4;
+      }
+
+      /* Developer Debug Menu Widget */
+      .o_developer_menu_container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 4px;
+        transition: background-color 0.1s ease;
+      }
+      .o_developer_menu_container:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+      .o_dev_dropdown {
+        position: absolute;
+        top: 40px;
+        right: 0;
+        width: 240px;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 600;
+        color: #212529;
+        list-style: none;
+        padding: 4px 0;
+        margin: 0;
+      }
+      .o_dev_header {
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: bold;
+        color: #714B67;
+        text-transform: uppercase;
+        border-bottom: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+      }
+      .o_dev_item {
+        padding: 8px 12px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #495057;
+        transition: background-color 0.1s ease;
+      }
+      .o_dev_item:hover {
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+
+      /* User Profile Dropdown Widget */
+      .o_user_profile_container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.1s ease;
+      }
+      .o_user_profile_container:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+      .o_profile_dropdown {
+        position: absolute;
+        top: 40px;
+        right: 0;
+        width: 160px;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 600;
+        color: #212529;
+        list-style: none;
+        padding: 4px 0;
+        margin: 0;
+      }
+      .o_profile_item {
+        padding: 10px 14px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #495057;
+        text-decoration: none;
+        transition: background-color 0.1s ease;
+      }
+      .o_profile_item:hover {
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+      .o_profile_item.logout {
+        border-top: 1px solid #dee2e6;
+        color: #dc2626;
+      }
+      .o_profile_item.logout:hover {
+        background-color: #fef2f2;
+      }
+
       .o_modal_overlay {
         position: fixed;
         top: 0;
