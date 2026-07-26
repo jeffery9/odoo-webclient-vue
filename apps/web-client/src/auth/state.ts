@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { RPCClient, SessionManager } from '@odoo/sdk';
+import { RPCClient, SessionManager, OdooBusClient } from '@odoo/sdk';
 import { getSavedConfig, saveConfig } from '../config.js';
 import { addNotification } from '../layout/notification.js';
 import { loadCompaniesFromSession } from './company.js';
@@ -14,6 +14,7 @@ export const dbName = ref(savedConfig.dbName);
 export const username = ref(savedConfig.username);
 export const password = ref(savedConfig.password);
 export const activeClient = ref<RPCClient | null>(null);
+export const activeBusClient = ref<OdooBusClient | null>(null);
 
 export const persistSettings = () => {
   saveConfig({
@@ -40,6 +41,20 @@ export const handleConnect = async (onSuccess: (client: RPCClient) => Promise<vo
     isAuthenticated.value = true;
     persistSettings();
 
+    // Boot real-time WebSocket messaging bus
+    try {
+      const bus = new OdooBusClient(hostUrl.value);
+      bus.connect();
+      bus.subscribe(['res.partner', 'mail.channel'], (events) => {
+        events.forEach(e => {
+          addNotification(`[Live WS] ${e.message}`, 'info');
+        });
+      });
+      activeBusClient.value = bus;
+    } catch (err) {
+      console.warn('Failed to connect to real-time Odoo websocket bus:', err);
+    }
+
     addNotification(`Successfully authenticated session with Odoo database: ${dbName.value}`, 'success');
 
     await onSuccess(client);
@@ -59,6 +74,21 @@ export const handleAddonAutoLogin = async (onSuccess: (client: RPCClient) => Pro
 
     activeClient.value = relativeClient;
     isAuthenticated.value = true;
+
+    // Boot real-time WebSocket messaging bus for same-origin session
+    try {
+      const bus = new OdooBusClient(window.location.origin);
+      bus.connect();
+      bus.subscribe(['res.partner', 'mail.channel'], (events) => {
+        events.forEach(e => {
+          addNotification(`[Live WS] ${e.message}`, 'info');
+        });
+      });
+      activeBusClient.value = bus;
+    } catch (err) {
+      console.warn('Failed to connect relative session WS:', err);
+    }
+
     addNotification('Successfully logged in using SSO session credentials.', 'success');
   } catch (err: any) {
     isAuthenticated.value = false;
@@ -68,6 +98,10 @@ export const handleAddonAutoLogin = async (onSuccess: (client: RPCClient) => Pro
 };
 
 export const handleDisconnectCleanup = (onCleanup: () => void) => {
+  if (activeBusClient.value) {
+    activeBusClient.value.close();
+    activeBusClient.value = null;
+  }
   isAuthenticated.value = false;
   activeClient.value = null;
   addNotification('User Administrator logged out of Odoo session.', 'info');
