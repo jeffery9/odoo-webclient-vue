@@ -16,6 +16,8 @@ export const searchQuery = ref('');
 export const listArch = ref<any>({ type: 'list', children: [] });
 export const formArch = ref<any>({ type: 'form', children: [] });
 export const kanbanArch = ref<any>({ type: 'kanban', children: [] });
+export const searchArch = ref<any>({ type: 'search', children: [] });
+export const searchPanelDomain = ref<any[]>([]);
 
 export const filteredRecords = computed(() => {
   if (!searchQuery.value) return partnerRecords;

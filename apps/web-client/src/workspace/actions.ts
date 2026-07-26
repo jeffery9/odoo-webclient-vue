@@ -12,7 +12,9 @@ import {
   totalRecordsCount,
   listArch,
   formArch,
-  kanbanArch
+  kanbanArch,
+  searchArch,
+  searchPanelDomain
 } from './state.js';
 
 export const executeAction = async (actionId: number, options?: { resetOffset?: boolean }) => {
@@ -35,18 +37,24 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
     );
     activeContext.value = evaluatedContext;
 
-    const viewsToLoad: [number | boolean, string][] = action.views || [[false, 'list'], [false, 'form'], [false, 'kanban']];
+    // Load search view alongside regular views to extract search panels
+    const viewsToLoad: [number | boolean, string][] = [
+      ...(action.views || [[false, 'list'], [false, 'form'], [false, 'kanban']]),
+      [false, 'search']
+    ];
     const viewsResponse = await activeClient.value.loadViews(model, viewsToLoad);
     const viewsMap = viewsResponse?.fields_views || {};
 
     const rawListXml = viewsMap.list?.arch || viewsMap.tree?.arch || '';
     const rawFormXml = viewsMap.form?.arch || '';
     const rawKanbanXml = viewsMap.kanban?.arch || '';
+    const rawSearchXml = viewsMap.search?.arch || '';
 
-    const domain = action.domain || [];
+    // Merge search panel domain filters with base action domain
+    const domain = [...(action.domain || []), ...searchPanelDomain.value];
     totalRecordsCount.value = await activeClient.value.call(model, 'search_count', [domain], { context: activeContext.value });
 
-    const fieldsToSelect: string[] = ['name', 'active'];
+    const fieldsToSelect: string[] = ['name', 'active', 'category_id', 'user_id'];
     const recordsData = await activeClient.value.search_read(
       model,
       domain,
@@ -61,6 +69,7 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
     if (rawListXml) listArch.value = ArchCompiler.compile(rawListXml);
     if (rawFormXml) formArch.value = ArchCompiler.compile(rawFormXml);
     if (rawKanbanXml) kanbanArch.value = ArchCompiler.compile(rawKanbanXml);
+    if (rawSearchXml) searchArch.value = ArchCompiler.compile(rawSearchXml);
 
     const proxies = recordsData.map((d: any) => new RecordProxy(model, d, activeClient.value!));
     partnerRecords.splice(0, partnerRecords.length, ...proxies);

@@ -3,14 +3,19 @@ import { ListRenderer, FormRenderer } from '@odoo/vue-runtime';
 import { RecordProxy } from '@odoo/sdk';
 import { activeMenu } from '../layout/state.js';
 import { isConnecting } from '../auth/state.js';
+import { SearchPanel } from './SearchPanel.js';
 import {
   activeViewType,
   selectedRecord,
   readonlyMode,
   filteredRecords,
   listArch,
-  formArch
+  formArch,
+  searchArch,
+  searchPanelDomain,
+  activeAction
 } from './state.js';
+import { executeAction } from './actions.js';
 
 export const MainWorkspace = {
   name: 'MainWorkspace',
@@ -18,6 +23,13 @@ export const MainWorkspace = {
     onSelectRecord: { type: Function, required: true }
   },
   setup(props: { onSelectRecord: (rec: RecordProxy) => void }) {
+    const handleFilterChange = async (domains: any[]) => {
+      searchPanelDomain.value = domains;
+      if (activeAction.value) {
+        await executeAction(activeAction.value.id, { resetOffset: true });
+      }
+    };
+
     return () => h('div', { class: 'o_action_manager' }, [
       // Left Navigation Subsection Sidebar
       activeMenu.value?.subsections ? h('aside', { class: 'o_sidebar' }, [
@@ -29,6 +41,12 @@ export const MainWorkspace = {
           }, item.name))
         ]))
       ]) : null,
+
+      // Left Search Panel (Odoo 19 Sidebar Filter View - only visible in list or kanban mode)
+      activeViewType.value !== 'form' ? h(SearchPanel, {
+        arch: searchArch.value,
+        onFilterChange: handleFilterChange
+      }) : null,
 
       // Right Main View Container
       h('div', { style: 'flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;' }, [

@@ -496,6 +496,70 @@
         background-color: #22c55e;
         border-color: #22c55e;
       }
+
+      /* Search Panel Left Layout */
+      .o_search_panel {
+        flex: 0 0 200px;
+        background-color: #ffffff;
+        border-right: 1px solid #dee2e6;
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        overflow-y: auto;
+      }
+      .o_search_panel_title {
+        font-size: 12px;
+        font-weight: bold;
+        color: #495057;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 8px;
+      }
+      .o_search_panel_section {
+        margin-bottom: 20px;
+      }
+      .o_search_panel_section_header {
+        font-size: 11px;
+        font-weight: bold;
+        color: #714B67;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.05em;
+      }
+      .o_search_panel_list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .o_search_panel_item {
+        font-size: 13px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        color: #495057;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background-color 0.1s ease;
+      }
+      .o_search_panel_item:hover {
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+      .o_search_panel_item.active {
+        background-color: #f1f2f4;
+        color: #714B67;
+        font-weight: 600;
+      }
+      .o_search_panel_icon {
+        font-size: 12px;
+      }
+
       .o_modal_overlay {
         position: fixed;
         top: 0;

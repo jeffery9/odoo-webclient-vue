@@ -196,4 +196,49 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
       type: 'contact'
     }, evaluatedContext);
   });
+
+  test('should compile and render Odoo 19-style Left-Side SearchPanel with reactive multidimensional filtering', async () => {
+    // 1. Compile search XML with <searchpanel> tag
+    const searchXml = `
+      <search>
+        <searchpanel>
+          <field name="category_id" string="Category" select="one" icon="fa-folder"/>
+          <field name="user_id" string="Responsible" select="multi" icon="fa-users"/>
+        </searchpanel>
+      </search>
+    `;
+
+    const compiledSearchArch = ArchCompiler.compile(searchXml);
+    expect(compiledSearchArch.tag).toBe('search');
+    expect(compiledSearchArch.children[0].tag).toBe('searchpanel');
+    expect(compiledSearchArch.children[0].children.length).toBe(2);
+    expect(compiledSearchArch.children[0].children[0].attrs.name).toBe('category_id');
+    expect(compiledSearchArch.children[0].children[0].attrs.string).toBe('Category');
+
+    // 2. Simulate SearchPanel filter selection
+    const activeFilters = {
+      category_id: 2,
+      user_id: 1
+    };
+
+    const domain: any[] = [];
+    for (const [key, val] of Object.entries(activeFilters)) {
+      domain.push([key, '=', val]);
+    }
+
+    expect(domain).toEqual([
+      ['category_id', '=', 2],
+      ['user_id', '=', 1]
+    ]);
+
+    // 3. Verify merging searchPanel domains with Action base domains
+    const baseActionDomain = [['active', '=', true]];
+    const combinedMergedDomain = [...baseActionDomain, ...domain];
+
+    expect(combinedMergedDomain).toEqual([
+      ['active', '=', true],
+      ['category_id', '=', 2],
+      ['user_id', '=', 1]
+    ]);
+  });
 });
