@@ -13,12 +13,33 @@ This project compiles standard Odoo XML view architectures and QWeb templates in
 
 ## 📸 Screenshots
 
-### 🔑 Enterprise-Grade Login & Synchronization Portal
+### 🔑 1. Enterprise-Grade Login & Synchronization Portal
 The Odoo Enterprise Connect portal supports dynamic server endpoint selection, database discovery, and secure user synchronization directly to Odoo's JSON-RPC layers.
 
 | Standard Dev Mode View | Compact Production Mode View |
 | :---: | :---: |
 | <img src="./docs/images/login-portal.png" width="400px" alt="Odoo Web Client Vue - Login Portal"/> | <img src="./docs/images/login-portal-compact.png" width="400px" alt="Odoo Web Client Vue - Compact Login Portal"/> |
+
+### ⚏ 2. High-Fidelity Odoo Enterprise App Switcher
+Features a highly responsive CSS grid overlay with name-derived, auto-generated gradients, quick search filter options, and seamless waffle-menu navigation.
+
+<p align="center">
+  <img src="./docs/images/app-switcher.png" width="800px" alt="Odoo Web Client Vue - App Switcher"/>
+</p>
+
+### ☰ 3. Dynamic List View & ControlPanel / SearchPanel
+Showcases the unified List view rendering engine complete with multi-faceted filtering, group-by logic, direct sidebar category selection, and paginated record navigation.
+
+<p align="center">
+  <img src="./docs/images/list-view.png" width="800px" alt="Odoo Web Client Vue - List View"/>
+</p>
+
+### ▭ 4. Responsive Form View & Sheet Layout Card
+Implements Odoo's classic `<sheet>` card view with advanced responsive CSS grid layouts, aligning `<group>` elements and auto-binding labels cleanly across all screen sizes.
+
+<p align="center">
+  <img src="./docs/images/form-view.png" width="800px" alt="Odoo Web Client Vue - Form View"/>
+</p>
 
 ---
 
