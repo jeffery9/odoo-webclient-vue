@@ -455,7 +455,9 @@ const App = {
 
 import { rendererRegistry } from '@odoo/vue-runtime';
 import { PremiumGraphRenderer } from './widgets/PremiumGraphRenderer.js';
+import { PremiumGanttRenderer } from './widgets/PremiumGanttRenderer.js';
 
 rendererRegistry.add('graph', PremiumGraphRenderer);
+rendererRegistry.add('gantt', PremiumGanttRenderer);
 
 createApp(App).mount('#app');

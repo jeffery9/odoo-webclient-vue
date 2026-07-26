@@ -6,6 +6,7 @@ import {
   PivotRenderer,
   CalendarRenderer,
   ActivityRenderer,
+  GanttRenderer,
   rendererRegistry
 } from '@odoo/vue-runtime';
 import { RecordProxy } from '@odoo/sdk';
@@ -216,8 +217,14 @@ export const MainWorkspace = {
               records: filteredRecords.value
             }) : null,
 
-            // Fallback for other advanced views (e.g. gantt, cohort, map, grid, qweb)
-            !['graph', 'pivot', 'calendar', 'activity'].includes(activeViewType.value) ? h('div', {
+            // Render Gantt view
+            activeViewType.value === 'gantt' ? h(rendererRegistry.has('gantt') ? rendererRegistry.get('gantt') : GanttRenderer, {
+              arch: viewArchs.value.gantt,
+              records: filteredRecords.value
+            }) : null,
+
+            // Fallback for other advanced views (e.g. cohort, map, grid, qweb)
+            !['graph', 'pivot', 'calendar', 'activity', 'gantt'].includes(activeViewType.value) ? h('div', {
               class: 'o_view_nocontent',
               style: 'padding: 40px; text-align: center; color: #475569; background: white; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center;'
             }, [
