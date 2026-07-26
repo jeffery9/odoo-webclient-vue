@@ -1,7 +1,7 @@
 import { h, defineComponent, computed } from 'vue';
 import { VuePivottableUi } from 'vue-pivottable';
-// Import official CSS styles via relative path to bypass exports constraints
-import '../../../../node_modules/vue-pivottable/dist/vue-pivottable.css';
+// Import official CSS styles via standard package import
+import 'vue-pivottable/dist/vue-pivottable.css';
 
 export const PremiumPivotRenderer = defineComponent({
   name: 'PremiumPivotRenderer',
