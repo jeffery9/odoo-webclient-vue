@@ -13,7 +13,8 @@
     "echarts": "^6.1.0",
     "frappe-gantt": "^1.2.2",
     "vue": "^3.4.35",
-    "vue-echarts": "^8.0.1"
+    "vue-echarts": "^8.0.1",
+    "vue-pivottable": "^1.4.1"
   },
   "devDependencies": {
     "vite": "^5.4.0"

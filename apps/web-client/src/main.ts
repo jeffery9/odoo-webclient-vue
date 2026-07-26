@@ -456,8 +456,10 @@ const App = {
 import { rendererRegistry } from '@odoo/vue-runtime';
 import { PremiumGraphRenderer } from './widgets/PremiumGraphRenderer.js';
 import { PremiumGanttRenderer } from './widgets/PremiumGanttRenderer.js';
+import { PremiumPivotRenderer } from './widgets/PremiumPivotRenderer.js';
 
 rendererRegistry.add('graph', PremiumGraphRenderer);
 rendererRegistry.add('gantt', PremiumGanttRenderer);
+rendererRegistry.add('pivot', PremiumPivotRenderer);
 
 createApp(App).mount('#app');

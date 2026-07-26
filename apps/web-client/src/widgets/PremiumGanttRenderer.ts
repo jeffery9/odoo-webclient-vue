@@ -1,7 +1,6 @@
 import { h, defineComponent, onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import Gantt from 'frappe-gantt';
 // Import official css styles via relative node_modules path to bypass exports limit
-import '../../../../node_modules/frappe-gantt/dist/frappe-gantt.css';
 
 export const PremiumGanttRenderer = defineComponent({
   name: 'PremiumGanttRenderer',
