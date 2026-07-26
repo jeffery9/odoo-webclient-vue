@@ -3,128 +3,275 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Odoo Semantic Compatibility SDK Reference Client</title>
+    <title>Odoo Web Client Layout</title>
     <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        background: #f8f9fa;
-        color: #333;
+      html, body {
         margin: 0;
-        padding: 20px;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background-color: #f1f2f4;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
       #app {
-        max-width: 1000px;
-        margin: 0 auto;
-        background: #ffffff;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        max-width: 100%;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0;
+        background: #f1f2f4;
       }
+      /* Top Navbar */
+      .o_main_navbar {
+        height: 46px;
+        background-color: #714B67; /* Standard Odoo Purple */
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        color: white;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .o_navbar_left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .o_menu_brand {
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .o_navbar_apps {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .o_nav_link {
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+      .o_nav_link:hover, .o_nav_link.active {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+      .o_navbar_right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .o_user_avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background-color: #e2e8f0;
+        color: #714B67;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+      }
+
+      /* Control Panel */
       .o_control_panel {
+        background-color: white;
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 2px solid #eaeedf;
-        padding-bottom: 15px;
-        margin-bottom: 20px;
+        flex-shrink: 0;
       }
-      .o_breadcrumbs {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #714B67; /* Standard Odoo purple */
-      }
-      .o_statusbar {
-        background: #f1f3f4;
-        padding: 10px 15px;
-        border-radius: 4px;
-        margin-bottom: 20px;
+      .o_cp_left {
         display: flex;
-        justify-content: flex-end;
-        gap: 10px;
+        flex-direction: column;
+        gap: 6px;
       }
-      .o_statusbar_status {
-        background: #714B67;
-        color: white;
-        padding: 4px 10px;
-        border-radius: 3px;
-        font-size: 0.85rem;
+      .o_breadcrumb {
+        font-size: 18px;
         font-weight: 500;
+        color: #495057;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 30px;
-      }
-      th {
-        background: #f1f3f4;
-        text-align: left;
-        padding: 12px;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #666;
-        border-bottom: 2px solid #ddd;
-      }
-      td {
-        padding: 12px;
-        border-bottom: 1px solid #eee;
+      .o_breadcrumb_link {
+        color: #714B67;
+        text-decoration: none;
         cursor: pointer;
       }
-      tr:hover td {
-        background: #fafafa;
+      .o_breadcrumb_link:hover {
+        text-decoration: underline;
       }
-      .o_form_view {
-        background: #fbfbfb;
-        border: 1px solid #eaeef0;
-        border-radius: 6px;
-        padding: 20px;
+      .o_breadcrumb_separator {
+        color: #adb5bd;
       }
-      .o_form_sheet {
-        background: #ffffff;
-        border: 1px solid #dcdfe0;
+      .o_cp_buttons {
+        display: flex;
+        gap: 8px;
+      }
+      .o_cp_right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+      }
+      /* Search view */
+      .o_cp_searchview {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ced4da;
         border-radius: 4px;
-        padding: 25px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        padding: 4px 8px;
+        background-color: #f8f9fa;
+        width: 320px;
+        gap: 6px;
       }
-      .o_field_widget {
-        display: inline-block;
-        padding: 6px 12px;
-        font-size: 1rem;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .o_readonly {
-        border-color: transparent;
-        background: transparent;
-        padding-left: 0;
-      }
-      .o_btn {
-        background: #714B67;
-        color: white;
+      .o_cp_searchview_input {
         border: none;
-        padding: 8px 16px;
-        font-size: 0.95rem;
+        background: transparent;
+        outline: none;
+        width: 100%;
+        font-size: 13px;
+      }
+      .o_cp_filters {
+        display: flex;
+        gap: 6px;
+      }
+      .o_filter_btn {
+        background: white;
+        border: 1px solid #ced4da;
+        padding: 2px 8px;
+        font-size: 11px;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #495057;
+      }
+      .o_filter_btn.active {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border-color: #7dd3fc;
+      }
+      /* View switchers */
+      .o_cp_switch_buttons {
+        display: flex;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .o_switch_btn {
+        background: white;
+        border: none;
+        padding: 4px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        color: #6c757d;
+        border-right: 1px solid #ced4da;
+      }
+      .o_switch_btn:last-child {
+        border-right: none;
+      }
+      .o_switch_btn.active {
+        background-color: #f1f2f4;
+        color: #495057;
+        font-weight: bold;
+      }
+
+      /* Content Area */
+      .o_content {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Base buttons styling */
+      .o_btn_primary {
+        background-color: #00878a; /* Odoo Teal */
+        color: white;
+        border: 1px solid #00878a;
+        padding: 4px 12px;
+        font-size: 13px;
         font-weight: 500;
         border-radius: 4px;
         cursor: pointer;
       }
-      .o_btn:hover {
-        background: #5a3a52;
+      .o_btn_primary:hover {
+        background-color: #006f72;
       }
       .o_btn_secondary {
-        background: #e0e0e0;
-        color: #333;
-        border: none;
-        padding: 8px 16px;
-        font-size: 0.95rem;
-        font-weight: 500;
+        background-color: white;
+        color: #495057;
+        border: 1px solid #ced4da;
+        padding: 4px 12px;
+        font-size: 13px;
         border-radius: 4px;
         cursor: pointer;
       }
       .o_btn_secondary:hover {
-        background: #d0d0d0;
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+      .o_btn_secondary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Odoo standard table */
+      .o_list_view {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 500;
+        font-size: 13px;
+        border-bottom: 2px solid #dee2e6;
+        padding: 10px 12px;
+        text-align: left;
+      }
+      td {
+        padding: 10px 12px;
+        font-size: 13px;
+        color: #212529;
+        border-bottom: 1px solid #dee2e6;
+      }
+      tr:hover td {
+        background-color: #f8f9fa;
+      }
+
+      /* Form sheet card */
+      .o_form_sheet_bg {
+        background-color: #f1f2f4;
+        padding: 16px 0;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+      }
+      .o_form_sheet {
+        background-color: white;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        padding: 24px;
+        width: 100%;
+        max-width: 800px;
+        box-sizing: border-box;
+        border-radius: 4px;
+        min-height: 400px;
       }
     </style>
   </head>
