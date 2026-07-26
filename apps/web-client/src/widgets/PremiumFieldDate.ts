@@ -2,8 +2,8 @@ import { defineComponent, h } from 'vue';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
-export const FieldCommunityDate = defineComponent({
-  name: 'FieldCommunityDate',
+export const PremiumFieldDate = defineComponent({
+  name: 'PremiumFieldDate',
   props: {
     record: { type: Object, required: true },
     name: { type: String, required: true },

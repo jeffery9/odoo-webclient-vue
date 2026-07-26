@@ -298,17 +298,17 @@ describe('Odoo Action Dynamic Default View Resolution', () => {
 });
 
 import { componentRegistry } from '@odoo/vue-runtime';
-import { FieldCommunityDate } from '../src/widgets/FieldCommunityDate.js';
+import { PremiumFieldDate } from '../src/widgets/PremiumFieldDate.js';
 
 describe('Odoo Vue Community Datepicker Adapter Integration', () => {
-  test('should successfully register FieldCommunityDate as date override', () => {
-    componentRegistry.add('date', FieldCommunityDate);
-    expect(componentRegistry.get('date')).toBe(FieldCommunityDate);
+  test('should successfully register PremiumFieldDate as date override', () => {
+    componentRegistry.add('date', PremiumFieldDate);
+    expect(componentRegistry.get('date')).toBe(PremiumFieldDate);
   });
 
-  test('should compile FieldCommunityDate adapter props mapping', () => {
+  test('should compile PremiumFieldDate adapter props mapping', () => {
     const record = new RecordProxy('res.partner', { birth_date: '1998-05-15' });
-    const widget = FieldCommunityDate;
+    const widget = PremiumFieldDate;
     
     // Evaluate Vue render functional output
     const renderFn = widget.setup({ record, name: 'birth_date', readonly: false }, {});
