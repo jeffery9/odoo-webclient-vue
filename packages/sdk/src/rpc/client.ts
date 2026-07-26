@@ -158,8 +158,13 @@ export class RPCClient {
   }
 
   async loadViews(model: string, views: [number | boolean, string][], options?: any): Promise<any> {
+    // Map any legacy 'tree' view types to 'list' for Odoo 19 get_views compatibility
+    const mappedViews: [number | boolean, string][] = views.map(([id, type]) => {
+      return [id, type === 'tree' ? 'list' : type];
+    });
+
     const result = await this.call(model, 'get_views', [], {
-      views,
+      views: mappedViews,
       options: options || {}
     });
 
@@ -167,8 +172,12 @@ export class RPCClient {
     const fields_views: Record<string, any> = {};
     if (result && result.views) {
       for (const [vType, vDesc] of Object.entries(result.views)) {
-        const key = vType === 'tree' ? 'list' : vType;
-        fields_views[key] = vDesc;
+        fields_views[vType] = vDesc;
+        if (vType === 'list') {
+          fields_views['tree'] = vDesc;
+        } else if (vType === 'tree') {
+          fields_views['list'] = vDesc;
+        }
       }
     }
 

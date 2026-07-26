@@ -2,6 +2,59 @@ import { RecordProxy, ArchCompiler, Context } from '@odoo/sdk';
 import { activeClient, isConnecting } from '../auth/state.js';
 import { addNotification } from '../layout/notification.js';
 import { activeCompany } from '../auth/company.js';
+
+export const parseDomainString = (domainStr: string): any[] => {
+  if (!domainStr || domainStr.trim() === '') return [];
+  const trimmed = domainStr.trim();
+  if (trimmed === '[]' || trimmed === '()') return [];
+  
+  let resultStr = '';
+  let inDoubleQuote = false;
+  let inSingleQuote = false;
+  
+  for (let i = 0; i < trimmed.length; i++) {
+    const char = trimmed[i];
+    if (char === '"' && trimmed[i - 1] !== '\\') {
+      if (!inSingleQuote) inDoubleQuote = !inDoubleQuote;
+      resultStr += char;
+    } else if (char === "'" && trimmed[i - 1] !== '\\') {
+      if (!inDoubleQuote) inSingleQuote = !inSingleQuote;
+      resultStr += '"';
+    } else if (inDoubleQuote || inSingleQuote) {
+      resultStr += char;
+    } else {
+      if (char === '(') {
+        resultStr += '[';
+      } else if (char === ')') {
+        resultStr += ']';
+      } else {
+        resultStr += char;
+      }
+    }
+  }
+
+  try {
+    const sanitized = resultStr
+      .replace(/\bTrue\b/g, 'true')
+      .replace(/\bFalse\b/g, 'false')
+      .replace(/\bNone\b/g, 'null');
+      
+    return JSON.parse(sanitized);
+  } catch (e) {
+    console.error('Failed to parse Python domain string:', domainStr, e);
+  }
+  return [];
+};
+
+export const extractFieldsFromAST = (node: any, fieldsSet: Set<string>) => {
+  if (!node) return;
+  if (node.tag === 'field' && node.attrs && node.attrs.name) {
+    fieldsSet.add(node.attrs.name);
+  }
+  if (node.children && Array.isArray(node.children)) {
+    node.children.forEach((child: any) => extractFieldsFromAST(child, fieldsSet));
+  }
+};
 import {
   partnerRecords,
   activeAction,
@@ -140,22 +193,20 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
     const viewsMap = viewsResponse?.fields_views || {};
 
     // Merge search panel domain filters with base action domain
-    const rawDomain = [...(action.domain || []), ...searchPanelDomain.value];
+    let actionDomain: any[] = [];
+    if (action.domain) {
+      if (typeof action.domain === 'string') {
+        actionDomain = parseDomainString(action.domain);
+      } else if (Array.isArray(action.domain)) {
+        actionDomain = action.domain;
+      }
+    }
+    const rawDomain = [...actionDomain, ...searchPanelDomain.value];
     const domain = await resolveSafeDomain(model, rawDomain, activeClient.value, activeContext.value);
 
     totalRecordsCount.value = await activeClient.value.call(model, 'search_count', [domain], { context: activeContext.value });
 
-    const fieldsToSelect: string[] = ['name', 'active', 'category_id', 'user_id'];
-    const recordsData = await activeClient.value.search_read(
-      model,
-      domain,
-      fieldsToSelect,
-      currentLimit.value,
-      currentOffset.value,
-      activeContext.value
-    );
-
-    // Dynamic compilation of all loaded views
+    // 1. Dynamic compilation of all loaded views (performed early to extract field requirements)
     viewArchs.value = {};
     for (const [vType, vData] of Object.entries(viewsMap)) {
       const xmlArch = (vData as any)?.arch || '';
@@ -169,6 +220,43 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
         }
       }
     }
+
+    // 2. Extract selected field requirements dynamically from the compiled view ASTs
+    const fieldsSet = new Set<string>();
+    fieldsSet.add('id'); // ID is always required
+
+    const activeViewAST = viewArchs.value[activeViewType.value as OdooViewType];
+    if (activeViewAST) {
+      extractFieldsFromAST(activeViewAST, fieldsSet);
+    }
+    const listAST = viewArchs.value['list'];
+    if (listAST) {
+      extractFieldsFromAST(listAST, fieldsSet);
+    }
+    const formAST = viewArchs.value['form'];
+    if (formAST) {
+      extractFieldsFromAST(formAST, fieldsSet);
+    }
+
+    // Filter extracted field names against physically existing model fields from get_views schema metadata
+    const modelFields = viewsResponse?.models?.[model]?.fields || {};
+    const fieldsToSelect = Array.from(fieldsSet).filter(f => !!modelFields[f]);
+
+    // Guarantee fallback metadata field representation
+    ['display_name', 'name'].forEach(f => {
+      if (modelFields[f] && !fieldsToSelect.includes(f)) {
+        fieldsToSelect.push(f);
+      }
+    });
+
+    const recordsData = await activeClient.value.search_read(
+      model,
+      domain,
+      fieldsToSelect,
+      currentLimit.value,
+      currentOffset.value,
+      activeContext.value
+    );
 
     const proxies = recordsData.map((d: any) => new RecordProxy(model, d, activeClient.value!));
     partnerRecords.splice(0, partnerRecords.length, ...proxies);

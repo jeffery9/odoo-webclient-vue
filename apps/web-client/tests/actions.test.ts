@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeAll } from 'vitest';
 import { activeClient } from '../src/auth/state.js';
 import { ActionManager } from '@odoo/sdk';
-import { executeAction, resolveDefaultViewType } from '../src/workspace/actions.js';
+import { executeAction, resolveDefaultViewType, parseDomainString } from '../src/workspace/actions.js';
 import { activeAction, activeViewType, activeContext, viewArchs } from '../src/workspace/state.js';
 
 describe('Odoo Action Execution Service', () => {
@@ -171,5 +171,27 @@ describe('Odoo Action Execution Service', () => {
     expect(viewArchs.value.pivot).toBeDefined();
     expect(viewArchs.value.pivot.tag).toBe('pivot');
     expect(viewArchs.value.pivot.attrs.string).toBe('Invoices Analysis');
+  });
+
+  describe('parseDomainString Utility', () => {
+    test('should parse empty Python lists and tuples', () => {
+      expect(parseDomainString('[]')).toEqual([]);
+      expect(parseDomainString('()')).toEqual([]);
+    });
+
+    test('should parse standard Python domains with simple criteria', () => {
+      expect(parseDomainString("[('active', '=', True)]")).toEqual([['active', '=', true]]);
+      expect(parseDomainString("[('state', '=', 'draft')]")).toEqual([['state', '=', 'draft']]);
+    });
+
+    test('should parse domains containing Python lists and booleans/None', () => {
+      expect(parseDomainString("[('state', 'in', ['draft', 'sent']), ('active', '=', False)]"))
+        .toEqual([['state', 'in', ['draft', 'sent']], ['active', '=', false]]);
+    });
+
+    test('should parse tuples as standard JSON-compatible arrays', () => {
+      expect(parseDomainString("[('state', 'in', ('draft', 'sent'))]"))
+        .toEqual([['state', 'in', ['draft', 'sent']]]);
+    });
   });
 });
