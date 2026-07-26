@@ -11,6 +11,17 @@ This project compiles standard Odoo XML view architectures and QWeb templates in
 
 ---
 
+## 📸 Screenshots
+
+### 🔑 Enterprise-Grade Login & Synchronization Portal
+The Odoo Enterprise Connect portal supports dynamic server endpoint selection, database discovery, and secure user synchronization directly to Odoo's JSON-RPC layers.
+
+| Standard Dev Mode View | Compact Production Mode View |
+| :---: | :---: |
+| <img src="./docs/images/login-portal.png" width="400px" alt="Odoo Web Client Vue - Login Portal"/> | <img src="./docs/images/login-portal-compact.png" width="400px" alt="Odoo Web Client Vue - Compact Login Portal"/> |
+
+---
+
 ## 🌟 Key Highlights & Architectural Advantages
 
 *   **Controller-less MVVM Architecture**
