@@ -66,6 +66,18 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
       if (model === 'res.partner' && method === 'search_read') {
         return mockSearchReadData;
       }
+      if (model === 'res.partner.category' && method === 'search_read') {
+        return [
+          { id: 1, name: 'VIP Clients' },
+          { id: 2, name: 'Standard Partners' }
+        ];
+      }
+      if (model === 'res.users' && method === 'search_read') {
+        return [
+          { id: 1, name: 'Administrator' },
+          { id: 2, name: 'Demo User' }
+        ];
+      }
       throw new Error(`Unexpected call_kw: ${model}.${method}`);
     });
 

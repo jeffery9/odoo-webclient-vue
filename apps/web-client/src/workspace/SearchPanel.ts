@@ -1,4 +1,11 @@
-import { h, ref } from 'vue';
+import { h, ref, watch, onMounted } from 'vue';
+import { activeClient } from '../auth/state.js';
+
+const FIELD_RELATIONS: Record<string, string> = {
+  category_id: 'res.partner.category',
+  user_id: 'res.users',
+  company_id: 'res.company'
+};
 
 export const SearchPanel = {
   name: 'SearchPanel',
@@ -7,29 +14,46 @@ export const SearchPanel = {
     onFilterChange: { type: Function, required: true }
   },
   setup(props: any) {
-    // Selected option ID for each search panel field (e.g. selections.value['category_id'] = 2)
     const selections = ref<Record<string, any>>({});
-    
-    // Loaded lists of options for fields (highly extensible domain models)
-    const fieldOptions = ref<Record<string, { id: any; name: string }[]>>({
-      category_id: [
-        { id: 1, name: 'VIP Clients' },
-        { id: 2, name: 'Standard Partners' },
-        { id: 3, name: 'External Vendors' }
-      ],
-      user_id: [
-        { id: 1, name: 'Administrator' },
-        { id: 2, name: 'Demo User' }
-      ]
-    });
+    const fieldOptions = ref<Record<string, { id: any; name: string }[]>>({});
 
-    // Helper to extract <field> elements inside the <searchpanel> child of <search>
+    // Extract searchpanel field definition nodes
     const getSearchFields = () => {
       if (!props.arch || props.arch.tag !== 'search') return [];
       const panel = props.arch.children?.find((c: any) => c.tag === 'searchpanel');
       if (!panel) return [];
       return panel.children?.filter((c: any) => c.tag === 'field') || [];
     };
+
+    // Load choices dynamically from Odoo relational models using search_read
+    const loadFieldOptions = async () => {
+      if (!activeClient.value) return;
+      const fields = getSearchFields();
+
+      for (const f of fields) {
+        const name = f.attrs.name;
+        const relationModel = FIELD_RELATIONS[name];
+        if (relationModel) {
+          try {
+            const records = await activeClient.value.search_read(
+              relationModel,
+              [],
+              ['name']
+            );
+            fieldOptions.value[name] = records.map((r: any) => ({
+              id: r.id,
+              name: r.name || r.display_name || `ID ${r.id}`
+            }));
+          } catch (e) {
+            fieldOptions.value[name] = [];
+          }
+        }
+      }
+    };
+
+    // Reactively reload on initialization and on arch changes
+    onMounted(loadFieldOptions);
+    watch(() => props.arch, loadFieldOptions, { deep: true });
 
     const handleSelect = (fieldName: string, optionId: any) => {
       if (optionId === undefined) {
@@ -38,7 +62,6 @@ export const SearchPanel = {
         selections.value[fieldName] = optionId;
       }
       
-      // Map selections to Odoo-style domain conditions (e.g. ['category_id', '=', optionId])
       const domains: any[] = [];
       for (const [key, val] of Object.entries(selections.value)) {
         domains.push([key, '=', val]);
@@ -56,15 +79,11 @@ export const SearchPanel = {
         fields.map((f: any) => {
           const name = f.attrs.name;
           const label = f.attrs.string || name.replace('_id', '').toUpperCase();
-          const options = fieldOptions.value[name] || [
-            { id: 1, name: 'General Option A' },
-            { id: 2, name: 'General Option B' }
-          ];
+          const options = fieldOptions.value[name] || [];
 
           return h('div', { class: 'o_search_panel_section', key: name }, [
             h('div', { class: 'o_search_panel_section_header' }, label),
             h('ul', { class: 'o_search_panel_list' }, [
-              // "All" option to reset filtering on this field
               h('li', {
                 class: ['o_search_panel_item', selections.value[name] === undefined ? 'active' : ''],
                 onClick: () => handleSelect(name, undefined)
@@ -72,7 +91,6 @@ export const SearchPanel = {
                 h('span', { class: 'o_search_panel_icon' }, '📁'),
                 h('span', null, 'All')
               ]),
-              // Dynamic item option list
               options.map((opt: any) => h('li', {
                 key: opt.id,
                 class: ['o_search_panel_item', selections.value[name] === opt.id ? 'active' : ''],
