@@ -158,10 +158,24 @@ export class RPCClient {
   }
 
   async loadViews(model: string, views: [number | boolean, string][], options?: any): Promise<any> {
-    return this.call(model, 'load_views', [[]], {
+    const result = await this.call(model, 'get_views', [], {
       views,
       options: options || {}
     });
+
+    // Adapt Odoo 19 get_views dict format into our legacy fields_views structure for client compatibility
+    const fields_views: Record<string, any> = {};
+    if (result && result.views) {
+      for (const [vType, vDesc] of Object.entries(result.views)) {
+        const key = vType === 'tree' ? 'list' : vType;
+        fields_views[key] = vDesc;
+      }
+    }
+
+    return {
+      fields_views,
+      models: result?.models || {}
+    };
   }
 
   async read(model: string, ids: number[], fields?: string[]): Promise<any[]> {

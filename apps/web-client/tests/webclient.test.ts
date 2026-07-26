@@ -21,12 +21,20 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     };
 
     const mockViewsResponse = {
-      fields_views: {
+      views: {
         list: {
           arch: `<tree><field name="name"/><field name="email"/></tree>`
         },
         form: {
           arch: `<form><sheet><field name="name"/></sheet></form>`
+        }
+      },
+      models: {
+        'res.partner': {
+          fields: {
+            name: { string: 'Name', type: 'char' },
+            email: { string: 'Email', type: 'char' }
+          }
         }
       }
     };
@@ -69,7 +77,7 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     });
 
     const callSpy = vi.spyOn(client, 'call').mockImplementation(async (model, method, args, kwargs) => {
-      if (model === 'res.partner' && method === 'load_views') {
+      if (model === 'res.partner' && method === 'get_views') {
         return mockViewsResponse;
       }
       if (model === 'res.partner' && method === 'search_count') {
@@ -123,7 +131,7 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
 
     // 6. Step 4: Load views and compile live XML Arch on the fly
     const viewResponse = await client.loadViews(action.res_model, action.views);
-    expect(callSpy).toHaveBeenCalledWith('res.partner', 'load_views', [[]], {
+    expect(callSpy).toHaveBeenCalledWith('res.partner', 'get_views', [], {
       views: [[false, 'list'], [false, 'form']],
       options: {}
     });
