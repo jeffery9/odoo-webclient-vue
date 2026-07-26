@@ -33,8 +33,16 @@ export const OdooControlPanel = defineComponent({
     const customGroupByField = ref('');
     const customGroupBysList = ref<string[]>([]);
 
+    // Comparison state (YoY / MoM)
+    const comparisonMode = ref<string>('none');
+
     // Dropdown open states
     const showCustomFilterDialog = ref(false);
+
+    const setComparisonMode = (mode: string) => {
+      comparisonMode.value = mode;
+      updateSearchState();
+    };
 
     // 1. Extract Search View Elements from Compiled Arch
     const searchFields = computed(() => {
@@ -127,7 +135,8 @@ export const OdooControlPanel = defineComponent({
 
       props.onSearchChange({
         domain: domains,
-        groupBy: groupByFields
+        groupBy: groupByFields,
+        comparison: comparisonMode.value !== 'none' ? { mode: comparisonMode.value } : null
       });
     };
 
@@ -324,6 +333,21 @@ export const OdooControlPanel = defineComponent({
                 }))),
                 h('el-button', { type: 'primary', size: 'small', onClick: addCustomGroupBy }, '添加')
               ]))
+            ])
+          }),
+
+          h('el-dropdown', { trigger: 'click' }, {
+            default: () => h('el-button', null, comparisonMode.value === 'none' ? '比较 🔽' : `比较: ${comparisonMode.value === 'yoy' ? '同比去年' : '环比上期'} 🔽`),
+            dropdown: () => h('el-dropdown-menu', null, [
+              h('el-dropdown-item', { onClick: () => setComparisonMode('none') }, () => [
+                h('span', { style: `color: ${comparisonMode.value === 'none' ? '#714B67' : 'inherit'}; font-weight: ${comparisonMode.value === 'none' ? '600' : 'normal'}` }, '无比较')
+              ]),
+              h('el-dropdown-item', { onClick: () => setComparisonMode('yoy') }, () => [
+                h('span', { style: `color: ${comparisonMode.value === 'yoy' ? '#714B67' : 'inherit'}; font-weight: ${comparisonMode.value === 'yoy' ? '600' : 'normal'}` }, '同比去年 (YoY)')
+              ]),
+              h('el-dropdown-item', { onClick: () => setComparisonMode('mom') }, () => [
+                h('span', { style: `color: ${comparisonMode.value === 'mom' ? '#714B67' : 'inherit'}; font-weight: ${comparisonMode.value === 'mom' ? '600' : 'normal'}` }, '环比上期 (MoM)')
+              ])
             ])
           }),
 
