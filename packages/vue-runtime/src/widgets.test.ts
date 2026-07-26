@@ -143,8 +143,10 @@ describe('Odoo Vue Base UI Widgets', () => {
     
     const dateWidget = componentRegistry.get('date') as any;
     const dateVnode = dateWidget.setup({ record, name: 'create_date', readonly: false }, {})();
-    expect(dateVnode.type).toBe('input');
-    expect(dateVnode.props.type).toBe('date');
+    expect(dateVnode.type).toBe('div');
+    expect(dateVnode.props.class).toBe('o_field_date_container');
+    expect(dateVnode.children[0].props.class).toBe('o_datepicker_input_group');
+    expect(dateVnode.children[0].children[0].children).toBe('2026-07-26');
 
     const datetimeWidget = componentRegistry.get('datetime') as any;
     const datetimeVnode = datetimeWidget.setup({ record, name: 'create_date', readonly: false }, {})();

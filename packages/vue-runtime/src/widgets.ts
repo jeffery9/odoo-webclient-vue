@@ -1,4 +1,4 @@
-import { defineComponent, h, inject } from 'vue';
+import { defineComponent, h, inject, ref, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { ACTION_MANAGER_KEY } from './di.js';
 import { componentRegistry, viewRegistry } from './registry.js';
 import { ListRenderer, CardRenderer } from './renderers.js';
@@ -218,20 +218,198 @@ export const FieldDate = defineComponent({
     readonly: { type: Boolean, default: false }
   },
   setup(props) {
+    const isOpen = ref(false);
+    const containerRef = ref<HTMLElement | null>(null);
+
+    // Initial state based on field's active value
+    const val = props.record?.get(props.name);
+    const initialDate = val ? new Date(val) : new Date();
+    const currentYear = ref(isNaN(initialDate.getTime()) ? new Date().getFullYear() : initialDate.getFullYear());
+    const currentMonth = ref(isNaN(initialDate.getTime()) ? new Date().getMonth() : initialDate.getMonth());
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const dayNames = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+    const toggleOpen = () => {
+      if (props.readonly) return;
+      isOpen.value = !isOpen.value;
+      
+      const activeVal = props.record?.get(props.name);
+      if (activeVal) {
+        const d = new Date(activeVal);
+        if (!isNaN(d.getTime())) {
+          currentYear.value = d.getFullYear();
+          currentMonth.value = d.getMonth();
+        }
+      }
+    };
+
+    const prevMonth = (e: Event) => {
+      e.stopPropagation();
+      if (currentMonth.value === 0) {
+        currentMonth.value = 11;
+        currentYear.value--;
+      } else {
+        currentMonth.value--;
+      }
+    };
+
+    const nextMonth = (e: Event) => {
+      e.stopPropagation();
+      if (currentMonth.value === 11) {
+        currentMonth.value = 0;
+        currentYear.value++;
+      } else {
+        currentMonth.value++;
+      }
+    };
+
+    const selectDate = (day: number, isCurrentMonth: boolean, e: Event) => {
+      e.stopPropagation();
+      let targetMonth = currentMonth.value;
+      let targetYear = currentYear.value;
+
+      if (!isCurrentMonth) {
+        if (day > 20) {
+          if (currentMonth.value === 0) {
+            targetMonth = 11;
+            targetYear--;
+          } else {
+            targetMonth--;
+          }
+        } else {
+          if (currentMonth.value === 11) {
+            targetMonth = 0;
+            targetYear++;
+          } else {
+            targetMonth++;
+          }
+        }
+      }
+
+      const yyyy = targetYear;
+      const mm = String(targetMonth + 1).padStart(2, '0');
+      const dd = String(day).padStart(2, '0');
+      
+      props.record?.set(props.name, `${yyyy}-${mm}-${dd}`);
+      isOpen.value = false;
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.value && !containerRef.value.contains(e.target as Node)) {
+        isOpen.value = false;
+      }
+    };
+
+    const hasInstance = getCurrentInstance();
+    if (hasInstance) {
+      onMounted(() => {
+        window.addEventListener('click', handleClickOutside);
+      });
+
+      onUnmounted(() => {
+        window.removeEventListener('click', handleClickOutside);
+      });
+    }
+
     return () => {
-      const val = props.record?.get(props.name);
-      const strVal = val !== null && val !== undefined ? String(val).split(' ')[0] : '';
+      const activeVal = props.record?.get(props.name);
+      const strVal = activeVal !== null && activeVal !== undefined ? String(activeVal).split(' ')[0] : '';
 
       if (props.readonly) {
         return h('span', { class: 'o_field_date o_readonly' }, strVal);
       }
 
-      return h('input', {
-        type: 'date',
-        class: 'o_field_date',
-        value: strVal,
-        onInput: (e: any) => props.record?.set(props.name, e.target.value)
-      });
+      const year = currentYear.value;
+      const month = currentMonth.value;
+
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const prevTotalDays = new Date(year, month, 0).getDate();
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const startingDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+      const cells: { day: number; current: boolean; active: boolean }[] = [];
+
+      for (let i = startingDay - 1; i >= 0; i--) {
+        cells.push({ day: prevTotalDays - i, current: false, active: false });
+      }
+
+      const activeDateObj = activeVal ? new Date(activeVal) : null;
+      for (let i = 1; i <= totalDays; i++) {
+        const isSelected = activeDateObj &&
+          !isNaN(activeDateObj.getTime()) &&
+          activeDateObj.getFullYear() === year &&
+          activeDateObj.getMonth() === month &&
+          activeDateObj.getDate() === i;
+        cells.push({ day: i, current: true, active: !!isSelected });
+      }
+
+      const remaining = 42 - cells.length;
+      for (let i = 1; i <= remaining; i++) {
+        cells.push({ day: i, current: false, active: false });
+      }
+
+      return h('div', {
+        ref: containerRef,
+        class: 'o_field_date_container',
+        style: 'position: relative; display: inline-block; width: 100%;'
+      }, [
+        h('div', {
+          class: 'o_datepicker_input_group',
+          style: 'display: flex; align-items: center; justify-content: space-between; border: 1px solid #ccc; padding: 6px 12px; border-radius: 4px; cursor: pointer; background: white;',
+          onClick: toggleOpen
+        }, [
+          h('span', { style: 'font-size: 14px; color: #333;' }, strVal || 'Select Date...'),
+          h('span', { style: 'color: #714B67; font-size: 14px;' }, '📅')
+        ]),
+
+        isOpen.value ? h('div', {
+          class: 'o_datepicker_popup',
+          style: 'position: absolute; top: calc(100% + 4px); left: 0; z-index: 1000; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 280px; padding: 12px; box-sizing: border-box;'
+        }, [
+          h('div', {
+            style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'
+          }, [
+            h('button', {
+              class: 'o_datepicker_nav_btn',
+              style: 'background: none; border: none; font-size: 16px; cursor: pointer; color: #714B67; font-weight: bold; padding: 4px 8px; border-radius: 4px;',
+              onClick: prevMonth
+            }, '‹'),
+            h('span', {
+              style: 'font-size: 14px; font-weight: bold; color: #334155;'
+            }, `${monthNames[month]} ${year}`),
+            h('button', {
+              class: 'o_datepicker_nav_btn',
+              style: 'background: none; border: none; font-size: 16px; cursor: pointer; color: #714B67; font-weight: bold; padding: 4px 8px; border-radius: 4px;',
+              onClick: nextMonth
+            }, '›')
+          ]),
+
+          h('div', {
+            style: 'display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; font-size: 11px; color: #64748b; margin-bottom: 6px;'
+          }, dayNames.map(d => h('span', null, d))),
+
+          h('div', {
+            style: 'display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; text-align: center; font-size: 12px;'
+          }, cells.map(c => {
+            let textColor = c.current ? '#1e293b' : '#94a3b8';
+            let bgStyle = 'background: none; border-radius: 4px;';
+            if (c.active) {
+              textColor = 'white';
+              bgStyle = 'background: #714B67; font-weight: bold; border-radius: 4px;';
+            }
+
+            return h('div', {
+              style: `cursor: pointer; padding: 6px 0; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease; ${bgStyle} color: ${textColor};`,
+              class: ['o_calendar_day_cell', c.active ? 'active' : ''],
+              onClick: (e: Event) => selectDate(c.day, c.current, e)
+            }, String(c.day));
+          }))
+        ]) : null
+      ]);
     };
   }
 });
