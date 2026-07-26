@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeAll } from 'vitest';
 import { activeClient } from '../src/auth/state.js';
+import { ActionManager } from '@odoo/sdk';
 import { executeAction, resolveDefaultViewType } from '../src/workspace/actions.js';
 import { activeAction, activeViewType, activeContext } from '../src/workspace/state.js';
 
@@ -119,5 +120,25 @@ describe('Odoo Action Execution Service', () => {
 
     viewsSpy.mockRestore();
     searchSpy.mockRestore();
+  });
+
+  test('should generate Odoo-compliant report download URLs in ActionManager', () => {
+    const am = new ActionManager();
+    const action = {
+      id: 30,
+      type: 'ir.actions.report',
+      report_name: 'sale.report_saleproceeded',
+      report_type: 'qweb-pdf'
+    };
+
+    const downloadUrl = am.getReportDownloadUrl(action, [5, 12]);
+    
+    // Odoo format is: /report/download?data=[encoded JSON of ["/report/pdf/report_name/5,12", "pdf"]]
+    expect(downloadUrl).toContain('/report/download?data=');
+    const decodedJSON = decodeURIComponent(downloadUrl.split('data=')[1]);
+    const parsedData = JSON.parse(decodedJSON);
+    
+    expect(parsedData[0]).toBe('/report/pdf/sale.report_saleproceeded/5,12');
+    expect(parsedData[1]).toBe('pdf');
   });
 });

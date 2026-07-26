@@ -114,6 +114,25 @@ export const MainWorkspace = {
                 onClick: async () => {
                   isPrinting.value = true;
                   addNotification(`Generating report "${activeAction.value.report_name}"...`, 'info');
+                  
+                  // Construct authentic Odoo report download URL
+                  const activeId = selectedRecord.value?.id || '';
+                  const reportType = activeAction.value.report_type === 'qweb-html' ? 'html' : 'pdf';
+                  const reportUrl = `/report/${reportType}/${activeAction.value.report_name}/${activeId}`;
+                  const downloadUrl = `/report/download?data=${encodeURIComponent(JSON.stringify([reportUrl, reportType]))}`;
+
+                  // Trigger same-origin browser download
+                  const link = document.createElement('a');
+                  link.href = downloadUrl;
+                  link.download = `${activeAction.value.report_name}.${reportType === 'html' ? 'html' : 'pdf'}`;
+                  document.body.appendChild(link);
+                  try {
+                    link.click();
+                  } catch (e) {
+                    // Bypassed gracefully
+                  }
+                  document.body.removeChild(link);
+
                   await new Promise(resolve => setTimeout(resolve, 1000));
                   isPrinting.value = false;
                   addNotification(`Report "${activeAction.value.report_name}" compiled and downloaded successfully.`, 'success');
