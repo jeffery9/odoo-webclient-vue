@@ -296,8 +296,44 @@ export const FieldOne2many = defineComponent({
 
     return () => {
       const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list') as any;
+      const cardNode = (props.subViews || []).find((v: any) => v.tag === 'card') as any;
       const val = props.record?.get(props.name) || [];
       const childRecords = Array.isArray(val) ? val : [];
+
+      // Render modern Card Grid Layout if card view is configured
+      if (cardNode) {
+        const cardFields = (cardNode.children || []).filter((c: any) => c.tag === 'field');
+        const cards = childRecords.map((childRec: any) => {
+          const fieldsVNodes = cardFields.map((f: any) => {
+            const fieldName = f.attrs.name;
+            const widgetName = f.attrs.widget || 'char';
+            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
+            return h('div', { class: 'o_card_field', style: 'margin-bottom: 4px;' }, [
+              h('strong', { style: 'margin-right: 4px;' }, f.attrs?.string || fieldName),
+              h(widgetComp, { record: childRec, name: fieldName, readonly: true })
+            ]);
+          });
+
+          return h('div', {
+            class: 'o_subview_card',
+            style: 'border: 1px solid #ddd; padding: 12px; border-radius: 6px; flex: 1 1 200px; cursor: pointer;',
+            onClick: () => {
+              if (actionManager) {
+                actionManager.doAction({
+                  name: 'Edit Relation Card',
+                  res_model: 'sub.model',
+                  type: 'ir.actions.act_window',
+                  views: [[false, 'form']],
+                  target: 'new',
+                  res_id: childRec.id
+                });
+              }
+            }
+          }, fieldsVNodes);
+        });
+
+        return h('div', { class: 'o_card_grid', style: 'display: flex; flex-wrap: wrap; gap: 12px;' }, cards);
+      }
 
       // 1. Fallback rendering if no nested tree definition is present
       if (!treeNode) {
@@ -374,8 +410,44 @@ export const FieldMany2many = defineComponent({
 
     return () => {
       const treeNode = (props.subViews || []).find((v: any) => v.tag === 'tree' || v.tag === 'list') as any;
+      const cardNode = (props.subViews || []).find((v: any) => v.tag === 'card') as any;
       const val = props.record?.get(props.name) || [];
       const childRecords = Array.isArray(val) ? val : [];
+
+      // Render modern Card Grid Layout if card view is configured
+      if (cardNode) {
+        const cardFields = (cardNode.children || []).filter((c: any) => c.tag === 'field');
+        const cards = childRecords.map((childRec: any) => {
+          const fieldsVNodes = cardFields.map((f: any) => {
+            const fieldName = f.attrs.name;
+            const widgetName = f.attrs.widget || 'char';
+            const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
+            return h('div', { class: 'o_card_field', style: 'margin-bottom: 4px;' }, [
+              h('strong', { style: 'margin-right: 4px;' }, f.attrs?.string || fieldName),
+              h(widgetComp, { record: childRec, name: fieldName, readonly: true })
+            ]);
+          });
+
+          return h('div', {
+            class: 'o_subview_card',
+            style: 'border: 1px solid #ddd; padding: 12px; border-radius: 6px; flex: 1 1 200px; cursor: pointer;',
+            onClick: () => {
+              if (actionManager) {
+                actionManager.doAction({
+                  name: 'Edit Relation Card',
+                  res_model: 'sub.model',
+                  type: 'ir.actions.act_window',
+                  views: [[false, 'form']],
+                  target: 'new',
+                  res_id: childRec.id
+                });
+              }
+            }
+          }, fieldsVNodes);
+        });
+
+        return h('div', { class: 'o_card_grid', style: 'display: flex; flex-wrap: wrap; gap: 12px;' }, cards);
+      }
 
       if (!treeNode) {
         if (props.readonly) {

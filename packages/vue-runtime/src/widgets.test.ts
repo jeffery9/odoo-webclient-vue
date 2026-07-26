@@ -203,4 +203,40 @@ describe('Odoo Vue Base UI Widgets', () => {
     const o2mVnode = renderFn();
     expect(o2mVnode.type).toBe('table');
   });
+
+  test('should render FieldOne2many with nested sub-view card grid', () => {
+    const childRecords = [
+      new RecordProxy('res.partner.line', { id: 10, name: 'Card Item 1', qty: 100 })
+    ];
+    const parentRecord = new RecordProxy('res.partner', { card_line_ids: childRecords });
+
+    const subViews = [
+      {
+        tag: 'card',
+        attrs: {},
+        children: [
+          { tag: 'field', attrs: { name: 'name', string: 'Card Name' } },
+          { tag: 'field', attrs: { name: 'qty', string: 'Qty' } }
+        ]
+      }
+    ];
+
+    const o2mWidget = componentRegistry.get('one2many') as any;
+    const o2mVnode = o2mWidget.setup({ record: parentRecord, name: 'card_line_ids', readonly: false, subViews }, {})();
+
+    // Check that it rendered a card grid wrapper div
+    expect(o2mVnode.type).toBe('div');
+    expect(o2mVnode.props.class).toBe('o_card_grid');
+    expect(o2mVnode.children.length).toBe(1); // 1 card
+
+    const firstCard = o2mVnode.children[0];
+    expect(firstCard.type).toBe('div');
+    expect(firstCard.props.class).toBe('o_subview_card');
+
+    // Inner card field labels and widget resolution
+    const fieldsContainer = firstCard.children;
+    expect(fieldsContainer.length).toBe(2); // 2 fields
+    expect(fieldsContainer[0].children[0].type).toBe('strong');
+    expect(fieldsContainer[0].children[0].children).toBe('Card Name');
+  });
 });
