@@ -113,9 +113,9 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [ ] Render functional stage transition buttons (e.g., "Confirm", "Draft").
 
 ### Task 7.2: `<sheet>` & `<group>` / `<col>` Responsive Grid
-- [ ] Implement Odoo's classic dual-column or multi-column grid via CSS Grid.
-- [ ] Ensure inner `<group>` tags align labels to the left and inputs to the right.
-- [ ] Apply the `<sheet>` white-card shadow layout constraints.
+- [x] Implement Odoo's classic dual-column or multi-column grid via CSS Grid.
+- [x] Ensure inner `<group>` tags align labels to the left and inputs to the right.
+- [x] Apply the `<sheet>` white-card shadow layout constraints.
 
 ### Task 7.3: `<notebook>` & `<page>` Tabs
 - [ ] Build responsive Tab view components to handle `<notebook>`.

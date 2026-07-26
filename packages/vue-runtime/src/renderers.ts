@@ -182,12 +182,46 @@ export const FormRenderer = defineComponent({
     record: { type: Object, required: true }
   },
   setup(props) {
-    const renderNode = (node: any): any => {
+    const renderNode = (node: any, isGrid = false): any => {
       if (!node) return null;
 
+      if (node.tag === 'header') {
+        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
+        return h('div', { class: 'o_form_statusbar' }, children);
+      }
+
       if (node.tag === 'sheet') {
-        const children = (node.children || []).map(renderNode).filter(Boolean);
-        return h('div', { class: 'o_form_sheet' }, children);
+        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
+        return h('div', { class: 'o_form_sheet_bg' }, [
+          h('div', { class: 'o_form_sheet' }, children)
+        ]);
+      }
+
+      if (node.tag === 'group') {
+        const isOuter = node.children?.some((c: any) => c.tag === 'group');
+        const children = (node.children || []).map((c: any) => renderNode(c, !isOuter)).flat().filter(Boolean);
+        return h('div', {
+          class: isOuter ? 'o_group' : 'o_inner_group',
+          style: isOuter ? 'display: flex; gap: 24px; width: 100%;' : 'display: grid; grid-template-columns: minmax(120px, auto) 1fr; gap: 8px 16px; align-items: center; width: 100%; margin-bottom: 16px;'
+        }, children);
+      }
+
+      if (node.tag === 'notebook') {
+        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
+        return h('div', { class: 'o_notebook', style: 'margin-top: 24px;' }, children);
+      }
+
+      if (node.tag === 'page') {
+        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
+        return h('div', { class: 'o_notebook_page', style: 'padding: 16px; border: 1px solid #e2e8f0; border-top: none;' }, [
+          h('h3', { style: 'margin-top: 0; font-size: 14px; font-weight: 600;' }, node.attrs?.string || 'Page'),
+          ...children
+        ]);
+      }
+
+      if (node.tag === 'div' && node.attrs?.class === 'oe_title') {
+        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
+        return h('div', { class: 'oe_title' }, children);
       }
 
       if (node.tag === 'field') {
@@ -227,7 +261,7 @@ export const FormRenderer = defineComponent({
         const widgetName = resolveFieldWidget(name, props.record, node.attrs, 'form');
         const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
 
-        return h(widgetComp, {
+        const fieldVnode = h(widgetComp, {
           record: props.record,
           name,
           readonly: evaluated.readonly,
@@ -237,10 +271,24 @@ export const FormRenderer = defineComponent({
           subViews: node.children || [],
           class: evaluated.required ? 'o_required_modifier' : ''
         });
+
+        if (isGrid && !node.attrs?.nolabel && node.attrs?.nolabel !== '1') {
+          const labelString = node.attrs?.string || name;
+          const labelVnode = h('label', { class: 'o_form_label', style: 'font-weight: 600; color: #475569; font-size: 13px;' }, labelString);
+          return [labelVnode, fieldVnode];
+        }
+
+        return fieldVnode;
+      }
+
+      if (node.tag === 'div') {
+        const children = (node.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
+        const cls = node.attrs?.class || '';
+        return h('div', { class: cls }, children);
       }
 
       if (node.children) {
-        const children = node.children.map(renderNode).filter(Boolean);
+        const children = node.children.map((c: any) => renderNode(c)).flat().filter(Boolean);
         return h('div', null, children);
       }
 
@@ -248,7 +296,7 @@ export const FormRenderer = defineComponent({
     };
 
     return () => {
-      const rootChildren = (props.arch?.children || []).map(renderNode).filter(Boolean);
+      const rootChildren = (props.arch?.children || []).map((c: any) => renderNode(c)).flat().filter(Boolean);
       return h('div', { class: 'o_form_view' }, rootChildren);
     };
   }
