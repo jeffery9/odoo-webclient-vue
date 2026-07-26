@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest';
 import { h, defineComponent } from 'vue';
-import { componentRegistry } from './registry.js';
+import { componentRegistry, viewRegistry } from './registry.js';
 import {
   FieldChar,
   FieldText,
@@ -231,5 +231,35 @@ describe('Odoo Vue Base UI Widgets', () => {
     expect(o2mVnode.props.arch.tag).toBe('tree');
     expect(o2mVnode.props.arch.children[1].attrs.name).toBe('display_name');
     expect(o2mVnode.props.records).toBe(childRecords);
+  });
+
+  test('should fallback to default model list in viewRegistry when subViews is empty', () => {
+    const defaultListArch = {
+      tag: 'tree',
+      children: [
+        { tag: 'field', attrs: { name: 'qty', string: 'Quantity' } }
+      ]
+    };
+    // Register default list for res.partner.line
+    viewRegistry.add('res.partner.line/list', defaultListArch);
+
+    const childRecords = [
+      new RecordProxy('res.partner.line', { id: 1, qty: 50 })
+    ];
+    const parentRecord = new RecordProxy('res.partner', { line_ids: childRecords });
+
+    const o2mWidget = componentRegistry.get('one2many') as any;
+    const o2mVnode = o2mWidget.setup({
+      record: parentRecord,
+      name: 'line_ids',
+      relation: 'res.partner.line',
+      readonly: false,
+      subViews: []
+    }, {})();
+
+    // Check that it falls back to the default list in viewRegistry rather than the generic fallback
+    expect(o2mVnode.type).toBe(ListRenderer);
+    expect(o2mVnode.props.arch).toBe(defaultListArch);
+    expect(o2mVnode.props.arch.children[0].attrs.name).toBe('qty');
   });
 });

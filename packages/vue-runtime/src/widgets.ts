@@ -1,6 +1,6 @@
 import { defineComponent, h, inject } from 'vue';
 import { ACTION_MANAGER_KEY } from './di.js';
-import { componentRegistry } from './registry.js';
+import { componentRegistry, viewRegistry } from './registry.js';
 import { ListRenderer, CardRenderer } from './renderers.js';
 
 export const FieldChar = defineComponent({
@@ -290,6 +290,7 @@ export const FieldOne2many = defineComponent({
     record: { type: Object, required: true },
     name: { type: String, required: true },
     readonly: { type: Boolean, default: false },
+    relation: { type: String, default: '' },
     subViews: { type: Array, default: () => [] }
   },
   setup(props) {
@@ -301,7 +302,10 @@ export const FieldOne2many = defineComponent({
 
       let activeArch = treeNode;
       if (!activeArch && !cardNode) {
-        activeArch = {
+        const targetModel = props.relation || childRecords[0]?.modelName || '';
+        const defaultListArch = targetModel && viewRegistry.has(`${targetModel}/list`) ? viewRegistry.get(`${targetModel}/list`) : null;
+        
+        activeArch = defaultListArch || {
           tag: 'tree',
           children: [
             { tag: 'field', attrs: { name: 'id', string: 'ID' } },
@@ -326,6 +330,7 @@ export const FieldMany2many = defineComponent({
     record: { type: Object, required: true },
     name: { type: String, required: true },
     readonly: { type: Boolean, default: false },
+    relation: { type: String, default: '' },
     subViews: { type: Array, default: () => [] }
   },
   setup(props) {
@@ -337,7 +342,10 @@ export const FieldMany2many = defineComponent({
 
       let activeArch = treeNode;
       if (!activeArch && !cardNode) {
-        activeArch = {
+        const targetModel = props.relation || childRecords[0]?.modelName || '';
+        const defaultListArch = targetModel && viewRegistry.has(`${targetModel}/list`) ? viewRegistry.get(`${targetModel}/list`) : null;
+        
+        activeArch = defaultListArch || {
           tag: 'tree',
           children: [
             { tag: 'field', attrs: { name: 'id', string: 'ID' } },

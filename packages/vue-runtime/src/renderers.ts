@@ -159,6 +159,7 @@ export const FormRenderer = defineComponent({
           readonly: evaluated.readonly,
           required: evaluated.required,
           options: optionsObj,
+          relation: node.attrs?.relation,
           subViews: node.children || [],
           class: evaluated.required ? 'o_required_modifier' : ''
         });

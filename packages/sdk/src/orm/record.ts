@@ -14,6 +14,10 @@ export class RecordProxy {
     this.client = client;
   }
 
+  get modelName(): string {
+    return this.model;
+  }
+
   get id(): number | null {
     return this._data.id ?? null;
   }
