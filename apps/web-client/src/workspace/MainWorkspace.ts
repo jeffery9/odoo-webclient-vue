@@ -1,5 +1,12 @@
 import { h, ref } from 'vue';
-import { ListRenderer, FormRenderer } from '@odoo/vue-runtime';
+import {
+  ListRenderer,
+  FormRenderer,
+  GraphRenderer,
+  PivotRenderer,
+  CalendarRenderer,
+  ActivityRenderer
+} from '@odoo/vue-runtime';
 import { RecordProxy } from '@odoo/sdk';
 import { activeMenu } from '../layout/state.js';
 import { isConnecting } from '../auth/state.js';
@@ -179,32 +186,60 @@ export const MainWorkspace = {
             ])
           ]) : null,
 
-          // 6. Act Window - Advanced View Rendering (graph, pivot, calendar, etc.)
+          // 6. Act Window - Advanced View Rendering (graph, pivot, calendar, activity)
           !isConnecting.value &&
           (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') &&
-          !['list', 'kanban', 'form'].includes(activeViewType.value) ? h('div', {
-            class: 'o_view_nocontent',
-            style: 'padding: 40px; text-align: center; color: #475569; background: #f8fafc; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;'
-          }, [
-            h('div', { style: 'font-size: 48px; margin-bottom: 16px;' }, '📊'),
-            h('h2', { style: 'margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1e293b;' }, `Semantic Support for ${activeViewType.value.toUpperCase()} View`),
-            h('p', { style: 'margin: 0 0 24px 0; font-size: 13px; color: #64748b; max-width: 480px; line-height: 1.5;' }, 
-              `The view layout (Arch XML) has been compiled successfully into a semantic IR representation and is stored inside 'viewArchs.value.${activeViewType.value}'. It is fully ready for the custom component implementation.`
-            ),
-            h('div', {
-              style: 'background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; width: 100%; max-width: 640px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);'
+          !['list', 'kanban', 'form'].includes(activeViewType.value) ? h('div', { style: 'padding: 24px; height: 100%; overflow-y: auto; background: #f8fafc; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px;' }, [
+            
+            // Render Graph view
+            activeViewType.value === 'graph' ? h(GraphRenderer, {
+              arch: viewArchs.value.graph,
+              records: filteredRecords.value
+            }) : null,
+
+            // Render Pivot view
+            activeViewType.value === 'pivot' ? h(PivotRenderer, {
+              arch: viewArchs.value.pivot,
+              records: filteredRecords.value
+            }) : null,
+
+            // Render Calendar view
+            activeViewType.value === 'calendar' ? h(CalendarRenderer, {
+              arch: viewArchs.value.calendar,
+              records: filteredRecords.value
+            }) : null,
+
+            // Render Activity view
+            activeViewType.value === 'activity' ? h(ActivityRenderer, {
+              arch: viewArchs.value.activity,
+              records: filteredRecords.value
+            }) : null,
+
+            // Fallback for other advanced views (e.g. gantt, cohort, map, grid, qweb)
+            !['graph', 'pivot', 'calendar', 'activity'].includes(activeViewType.value) ? h('div', {
+              class: 'o_view_nocontent',
+              style: 'padding: 40px; text-align: center; color: #475569; background: white; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center;'
             }, [
-              h('div', { style: 'font-family: monospace; font-size: 12px; color: #334155;' }, [
-                h('div', { style: 'font-weight: 600; color: #714B67; margin-bottom: 8px;' }, 'Compiled View AST Header:'),
-                h('pre', { style: 'margin: 0; padding: 8px; background: #f1f5f9; border-radius: 4px; overflow-x: auto;' }, 
-                  JSON.stringify({
-                    tag: (viewArchs.value[activeViewType.value] as any)?.tag || 'unknown',
-                    attributes: (viewArchs.value[activeViewType.value] as any)?.attributes || {},
-                    childrenCount: (viewArchs.value[activeViewType.value] as any)?.children?.length || 0
-                  }, null, 2)
-                )
+              h('div', { style: 'font-size: 48px; margin-bottom: 16px;' }, '📊'),
+              h('h2', { style: 'margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #1e293b;' }, `Semantic Support for ${activeViewType.value.toUpperCase()} View`),
+              h('p', { style: 'margin: 0 0 24px 0; font-size: 13px; color: #64748b; max-width: 480px; line-height: 1.5;' }, 
+                `The view layout (Arch XML) has been compiled successfully into a semantic IR representation and is stored inside 'viewArchs.value.${activeViewType.value}'. It is fully ready for the custom component implementation.`
+              ),
+              h('div', {
+                style: 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; width: 100%; max-width: 600px;'
+              }, [
+                h('div', { style: 'font-family: monospace; font-size: 12px; color: #334155;' }, [
+                  h('div', { style: 'font-weight: 600; color: #714B67; margin-bottom: 8px;' }, 'Compiled View AST Header:'),
+                  h('pre', { style: 'margin: 0; padding: 8px; background: #f1f5f9; border-radius: 4px; overflow-x: auto;' }, 
+                    JSON.stringify({
+                      tag: (viewArchs.value[activeViewType.value] as any)?.tag || 'unknown',
+                      attributes: (viewArchs.value[activeViewType.value] as any)?.attrs || {},
+                      childrenCount: (viewArchs.value[activeViewType.value] as any)?.children?.length || 0
+                    }, null, 2)
+                  )
+                ])
               ])
-            ])
+            ]) : null
           ]) : null
         ])
       ])

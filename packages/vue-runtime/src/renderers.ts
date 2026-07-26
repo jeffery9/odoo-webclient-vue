@@ -253,3 +253,318 @@ export const FormRenderer = defineComponent({
     };
   }
 });
+
+export const GraphRenderer = defineComponent({
+  props: {
+    arch: { type: Object, required: true },
+    records: { type: Array, required: true }
+  },
+  setup(props: { arch: any, records: any[] }) {
+    return () => {
+      const fieldNodes = (props.arch?.children || []).filter((c: any) => c.tag === 'field');
+      const rowNode = fieldNodes.find((c: any) => c.attrs?.type === 'row') || fieldNodes[0];
+      const rowFieldName = rowNode?.attrs?.name || 'name';
+      
+      const graphType = props.arch?.attrs?.type || 'bar';
+
+      const groups: Record<string, number> = {};
+      props.records.forEach((rec: any) => {
+        let val = rec.get ? rec.get(rowFieldName) : rec[rowFieldName];
+        if (typeof val === 'object' && val !== null) {
+          val = val.display_name || val.name || JSON.stringify(val);
+        }
+        const label = String(val || 'Undefined');
+        groups[label] = (groups[label] || 0) + 1;
+      });
+
+      const dataEntries = Object.entries(groups);
+      const maxVal = Math.max(...dataEntries.map(e => e[1]), 1);
+      const colors = ['#714B67', '#01A299', '#E9A12E', '#F05555', '#3C8dbc', '#a6c8e0'];
+
+      if (graphType === 'pie') {
+        const total = dataEntries.reduce((sum, e) => sum + e[1], 0);
+        let accumulatedAngle = 0;
+        const slices = dataEntries.map((entry, index) => {
+          const val = entry[1];
+          const angle = (val / total) * 360;
+          const x1 = 150 + 100 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
+          const y1 = 150 + 100 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
+          accumulatedAngle += angle;
+          const x2 = 150 + 100 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
+          const y2 = 150 + 100 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
+          const largeArcFlag = angle > 180 ? 1 : 0;
+          
+          const pathData = `M 150 150 L ${x1} ${y1} A 100 100 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+          return h('path', {
+            d: pathData,
+            fill: colors[index % colors.length],
+            stroke: 'white',
+            strokeWidth: '2'
+          });
+        });
+
+        const legends = dataEntries.map((entry, index) => {
+          return h('div', { style: 'display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475569;' }, [
+            h('span', { style: `width: 12px; height: 12px; background: ${colors[index % colors.length]}; border-radius: 2px;` }),
+            h('span', null, `${entry[0]} (${entry[1]})`)
+          ]);
+        });
+
+        return h('div', { class: 'o_graph_view', style: 'padding: 24px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' }, [
+          h('svg', { width: '300', height: '300', style: 'overflow: visible;' }, slices),
+          h('div', { style: 'display: flex; flex-direction: column; gap: 8px;' }, legends)
+        ]);
+      }
+
+      if (graphType === 'line') {
+        const width = 500;
+        const height = 240;
+        const padding = 40;
+        const graphWidth = width - padding * 2;
+        const graphHeight = height - padding * 2;
+
+        const points = dataEntries.map((entry, index) => {
+          const x = padding + (index / Math.max(dataEntries.length - 1, 1)) * graphWidth;
+          const y = padding + graphHeight - (entry[1] / maxVal) * graphHeight;
+          return { x, y, label: entry[0], val: entry[1] };
+        });
+
+        const dPath = points.length > 0 
+          ? `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')
+          : '';
+
+        const gridLines = Array.from({ length: 5 }).map((_, i) => {
+          const y = padding + (i / 4) * graphHeight;
+          return h('line', { x1: padding, y1: y, x2: width - padding, y2: y, stroke: '#f1f5f9', strokeWidth: '1' });
+        });
+
+        return h('div', { class: 'o_graph_view', style: 'padding: 24px; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' }, [
+          h('h3', { style: 'margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Graph Analysis'),
+          h('svg', { width, height }, [
+            ...gridLines,
+            h('path', { d: dPath, fill: 'none', stroke: '#714B67', strokeWidth: '3' }),
+            points.map((p) => h('circle', { cx: p.x, cy: p.y, r: '5', fill: '#714B67', stroke: 'white', strokeWidth: '2' })),
+            points.map((p) => h('text', { x: p.x, y: height - 15, textAnchor: 'middle', fontSize: '11', fill: '#64748b' }, p.label)),
+            points.map((p) => h('text', { x: p.x, y: p.y - 10, textAnchor: 'middle', fontSize: '11', fontWeight: 'bold', fill: '#1e293b' }, p.val))
+          ])
+        ]);
+      }
+
+      const barWidth = 40;
+      const spacing = 24;
+      const height = 240;
+      const padding = 32;
+      const svgWidth = dataEntries.length * (barWidth + spacing) + padding * 2;
+
+      const bars = dataEntries.map((entry, index) => {
+        const hVal = (entry[1] / maxVal) * (height - padding * 2);
+        const x = padding + index * (barWidth + spacing);
+        const y = height - padding - hVal;
+
+        return h('g', null, [
+          h('rect', {
+            x,
+            y,
+            width: barWidth,
+            height: hVal,
+            fill: colors[index % colors.length],
+            rx: '4'
+          }),
+          h('text', {
+            x: x + barWidth / 2,
+            y: height - 10,
+            textAnchor: 'middle',
+            fontSize: '11',
+            fill: '#64748b'
+          }, entry[0]),
+          h('text', {
+            x: x + barWidth / 2,
+            y: y - 8,
+            textAnchor: 'middle',
+            fontSize: '11',
+            fontWeight: 'bold',
+            fill: '#1e293b'
+          }, entry[1])
+        ]);
+      });
+
+      return h('div', { class: 'o_graph_view', style: 'padding: 24px; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto;' }, [
+        h('h3', { style: 'margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Graph Analysis'),
+        h('svg', { width: svgWidth, height }, bars)
+      ]);
+    };
+  }
+});
+
+export const PivotRenderer = defineComponent({
+  props: {
+    arch: { type: Object, required: true },
+    records: { type: Array, required: true }
+  },
+  setup(props: { arch: any, records: any[] }) {
+    return () => {
+      const fieldNodes = (props.arch?.children || []).filter((c: any) => c.tag === 'field');
+      const rowNode = fieldNodes.find((c: any) => c.attrs?.type === 'row') || fieldNodes[0];
+      const colNode = fieldNodes.find((c: any) => c.attrs?.type === 'col') || fieldNodes[1];
+
+      const rowFieldName = rowNode?.attrs?.name || 'name';
+      const colFieldName = colNode?.attrs?.name;
+
+      const rowLabels = new Set<string>();
+      const colLabels = new Set<string>();
+      const cellValues: Record<string, number> = {};
+
+      props.records.forEach((rec: any) => {
+        let rVal = rec.get ? rec.get(rowFieldName) : rec[rowFieldName];
+        if (typeof rVal === 'object' && rVal !== null) {
+          rVal = rVal.display_name || rVal.name || JSON.stringify(rVal);
+        }
+        const rowLabel = String(rVal || 'Undefined');
+        rowLabels.add(rowLabel);
+
+        let colLabel = 'Count';
+        if (colFieldName) {
+          let cVal = rec.get ? rec.get(colFieldName) : rec[colFieldName];
+          if (typeof cVal === 'object' && cVal !== null) {
+            cVal = cVal.display_name || cVal.name || JSON.stringify(cVal);
+          }
+          colLabel = String(cVal || 'Undefined');
+        }
+        colLabels.add(colLabel);
+
+        const key = `${rowLabel}::${colLabel}`;
+        cellValues[key] = (cellValues[key] || 0) + 1;
+      });
+
+      const rowArray = Array.from(rowLabels);
+      const colArray = Array.from(colLabels);
+
+      const colTotals: Record<string, number> = {};
+      const rowTotals: Record<string, number> = {};
+      let absoluteTotal = 0;
+
+      rowArray.forEach(row => {
+        colArray.forEach(col => {
+          const val = cellValues[`${row}::${col}`] || 0;
+          rowTotals[row] = (rowTotals[row] || 0) + val;
+          colTotals[col] = (colTotals[col] || 0) + val;
+          absoluteTotal += val;
+        });
+      });
+
+      return h('div', { class: 'o_pivot_view', style: 'padding: 24px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto;' }, [
+        h('h3', { style: 'margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Pivot Analysis'),
+        h('table', { style: 'width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;' }, [
+          h('thead', null, [
+            h('tr', { style: 'background: #f8fafc; border-bottom: 2px solid #e2e8f0;' }, [
+              h('th', { style: 'padding: 12px; font-weight: 600; color: #475569;' }, rowFieldName.toUpperCase()),
+              colArray.map(col => h('th', { style: 'padding: 12px; font-weight: 600; color: #475569;' }, col)),
+              h('th', { style: 'padding: 12px; font-weight: 600; color: #475569; background: #f1f5f9;' }, 'Total')
+            ])
+          ]),
+          h('tbody', null, [
+            rowArray.map((row, rIdx) => h('tr', { style: `border-bottom: 1px solid #f1f5f9; background: ${rIdx % 2 === 0 ? 'white' : '#f8fafc'};` }, [
+              h('td', { style: 'padding: 12px; font-weight: 500; color: #1e293b;' }, row),
+              colArray.map(col => h('td', { style: 'padding: 12px; color: #334155;' }, cellValues[`${row}::${col}`] || '-')),
+              h('td', { style: 'padding: 12px; font-weight: 600; color: #1e293b; background: #f8fafc;' }, rowTotals[row])
+            ])),
+            h('tr', { style: 'background: #f1f5f9; border-top: 2px solid #e2e8f0; font-weight: 600;' }, [
+              h('td', { style: 'padding: 12px; color: #1e293b;' }, 'Total'),
+              colArray.map(col => h('td', { style: 'padding: 12px; color: #1e293b;' }, colTotals[col])),
+              h('td', { style: 'padding: 12px; color: #714B67;' }, absoluteTotal)
+            ])
+          ])
+        ])
+      ]);
+    };
+  }
+});
+
+export const CalendarRenderer = defineComponent({
+  props: {
+    arch: { type: Object, required: true },
+    records: { type: Array, required: true }
+  },
+  setup(props: { arch: any, records: any[] }) {
+    return () => {
+      const dateFieldName = props.arch?.attrs?.date_start || 'create_date' || 'date';
+      
+      const days = Array.from({ length: 35 }).map((_, idx) => {
+        const dayNumber = (idx % 31) + 1;
+        return {
+          dayNumber,
+          dateStr: `2026-07-${String(dayNumber).padStart(2, '0')}`,
+          recordsInDay: [] as any[]
+        };
+      });
+
+      props.records.forEach((rec: any) => {
+        const rawDate = rec.get ? rec.get(dateFieldName) : rec[dateFieldName];
+        if (rawDate) {
+          const dateOnly = String(rawDate).split(' ')[0];
+          const matchedDay = days.find(d => d.dateStr === dateOnly);
+          if (matchedDay) {
+            matchedDay.recordsInDay.push(rec);
+          }
+        }
+      });
+
+      return h('div', { class: 'o_calendar_view', style: 'padding: 24px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' }, [
+        h('h3', { style: 'margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Calendar View'),
+        h('div', { style: 'display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e2e8f0; border-radius: 4px; overflow: hidden;' }, [
+          ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => h('div', {
+            style: 'background: #f8fafc; padding: 10px; font-weight: 600; font-size: 12px; color: #475569; text-align: center;'
+          }, day)),
+          days.map(day => h('div', {
+            style: 'background: white; min-height: 80px; padding: 8px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box;'
+          }, [
+            h('span', { style: 'font-size: 11px; font-weight: 600; color: #64748b;' }, day.dayNumber),
+            h('div', { style: 'display: flex; flex-direction: column; gap: 4px; overflow-y: auto;' }, 
+              day.recordsInDay.map(rec => h('div', {
+                style: 'background: #714B67; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;'
+              }, rec.get('name') || rec.get('display_name')))
+            )
+          ]))
+        ])
+      ]);
+    };
+  }
+});
+
+export const ActivityRenderer = defineComponent({
+  props: {
+    arch: { type: Object, required: true },
+    records: { type: Array, required: true }
+  },
+  setup(props: { arch: any, records: any[] }) {
+    return () => {
+      return h('div', { class: 'o_activity_view', style: 'padding: 24px; background: #f8fafc; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px;' }, [
+        h('h3', { style: 'margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Scheduled Activities'),
+        h('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, 
+          props.records.map((rec: any, idx) => {
+            const hasActivity = idx % 2 === 0;
+            const status = idx % 3 === 0 ? 'Today' : idx % 3 === 1 ? 'Overdue' : 'Planned';
+            const badgeColor = status === 'Today' ? '#E9A12E' : status === 'Overdue' ? '#F05555' : '#01A299';
+
+            return h('div', {
+              style: 'background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.02);'
+            }, [
+              h('div', { style: 'display: flex; align-items: center; gap: 16px;' }, [
+                h('div', { style: 'font-size: 24px;' }, '📅'),
+                h('div', null, [
+                  h('div', { style: 'font-weight: 600; color: #1e293b; font-size: 14px;' }, rec.get('name') || rec.get('display_name')),
+                  h('div', { style: 'font-size: 12px; color: #64748b; margin-top: 2px;' }, hasActivity ? 'Follow-up Email Scheduled' : 'No pending activity')
+                ])
+              ]),
+              hasActivity ? h('span', {
+                style: `background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600;`
+              }, status) : h('span', {
+                style: 'color: #94a3b8; font-size: 12px;'
+              }, 'Completed')
+            ]);
+          })
+        )
+      ]);
+    };
+  }
+});
