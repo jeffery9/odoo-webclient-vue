@@ -91,6 +91,12 @@ Odoo's Custom DSLs are compiled to a standard, framework-agnostic **Semantic IR*
 *   **Zero Hardcoded Demo Data**: Production source files are strictly metadata-driven and must contain no hardcoded mockup lists or demo records. Relational widgets (e.g. Odoo `<searchpanel>` fields like `category_id` or `user_id`) must resolve their options dynamically from the active Odoo database via ORM `search_read` pipelines, falling back to empty state representations if unconnected, while retaining test mock data strictly in test files under `tests/`.
 *   **On-Demand Sidebar SearchPanel**: SearchPanel filters must strictly be rendered on-demand. The layout checks the compiled XML AST of the active action's search view (`searchArch`), mounting and displaying the sidebar filters if and only if a `<searchpanel>` node is explicitly declared.
 
+### D. Vue Ecosystem Widget Integration & Adapter Design
+We decouple Odoo field-rendering logic from any rigid presentation layer using a **Component-Based Widget Registry** (`componentRegistry` inside `@odoo/vue-runtime`):
+1.  **Strict Adapter Contract**: Third-party Vue components (such as Element Plus, ECharts, or custom Tailwind elements) are encapsulated into light "adapter shells" that accept Odoo-standard props: `record` (RecordProxy), `name` (field name), `readonly` (boolean), and `options` (custom view parameters).
+2.  **No Direct Core Coupling**: Client rendering engines (`FormRenderer` and `ListRenderer`) resolve widgets dynamically using `resolveFieldWidget()` and query the `componentRegistry`.
+3.  **Zero-DOM Reactivity**: Modifying field values inside widgets is performed exclusively through the reactive `RecordProxy.set(name, value)` method, automatically triggering downstream dependencies, modifer evaluations, and backend onchanges without manual DOM manipulation.
+
 ---
 
 ## 4. Environment & Command Pipeline
