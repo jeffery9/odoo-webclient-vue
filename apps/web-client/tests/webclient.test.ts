@@ -266,3 +266,33 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     ]);
   });
 });
+
+import { resolveDefaultViewType } from '../src/workspace/actions.js';
+
+describe('Odoo Action Dynamic Default View Resolution', () => {
+  test('should resolve default active view type from view_mode string', () => {
+    const action1 = { view_mode: 'kanban,tree,form' };
+    expect(resolveDefaultViewType(action1)).toBe('kanban');
+
+    const action2 = { view_mode: 'form,list' };
+    expect(resolveDefaultViewType(action2)).toBe('form');
+
+    const action3 = { view_mode: 'tree,form' };
+    expect(resolveDefaultViewType(action3)).toBe('list');
+  });
+
+  test('should fallback to views array list if view_mode is not defined', () => {
+    const action = {
+      views: [
+        [false, 'kanban'],
+        [false, 'form']
+      ]
+    };
+    expect(resolveDefaultViewType(action)).toBe('kanban');
+  });
+
+  test('should default to list if no valid views are specified', () => {
+    expect(resolveDefaultViewType(null)).toBe('list');
+    expect(resolveDefaultViewType({})).toBe('list');
+  });
+});

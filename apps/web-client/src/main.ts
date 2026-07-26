@@ -54,6 +54,7 @@ import {
   handleCreate,
   saveChanges,
   discardChanges,
+  resolveDefaultViewType,
 } from './workspace/actions.js';
 import { MainWorkspace } from './workspace/MainWorkspace.js';
 
@@ -137,7 +138,6 @@ const App = {
 
     const selectApp = async (app: any) => {
       activeMenu.value = app;
-      activeViewType.value = 'list';
       currentOffset.value = 0;
 
       const firstSectionItem = app.subsections?.[0]?.items?.[0];
@@ -151,7 +151,6 @@ const App = {
 
     const selectSubmenu = async (item: { name: string; actionID: number }) => {
       activeMenuName.value = item.name;
-      activeViewType.value = 'list';
       await executeAction(item.actionID, { resetOffset: true });
     };
 
@@ -427,7 +426,7 @@ const App = {
           onToggleEdit: () => { readonlyMode.value = !readonlyMode.value; },
           onSaveChanges: saveChanges,
           onDiscardChanges: discardChanges,
-          onBackToList: () => { activeViewType.value = 'list'; readonlyMode.value = true; },
+          onBackToList: () => { activeViewType.value = resolveDefaultViewType(activeAction.value); readonlyMode.value = true; },
           onSetViewType: setViewType,
         }),
 

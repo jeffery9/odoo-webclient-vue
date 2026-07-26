@@ -72,6 +72,10 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
 
     activeAction.value = action;
 
+    // Dynamically resolve default view type based on action metadata
+    const defaultView = resolveDefaultViewType(action);
+    activeViewType.value = defaultView;
+
     if (rawListXml) listArch.value = ArchCompiler.compile(rawListXml);
     if (rawFormXml) formArch.value = ArchCompiler.compile(rawFormXml);
     if (rawKanbanXml) kanbanArch.value = ArchCompiler.compile(rawKanbanXml);
@@ -136,4 +140,30 @@ export const discardChanges = () => {
     selectedRecord.value.discard();
   }
   readonlyMode.value = true;
+};
+
+export const resolveDefaultViewType = (action: any): 'list' | 'kanban' | 'form' => {
+  if (!action) return 'list';
+
+  // Support comma-separated view_mode (e.g., 'kanban,tree,form')
+  if (action.view_mode && typeof action.view_mode === 'string') {
+    const modes = action.view_mode.split(',').map((m: string) => m.trim());
+    for (const m of modes) {
+      if (m === 'tree' || m === 'list') return 'list';
+      if (m === 'kanban') return 'kanban';
+      if (m === 'form') return 'form';
+    }
+  }
+
+  // Fallback to views array list if available
+  if (Array.isArray(action.views)) {
+    for (const v of action.views) {
+      const type = v[1];
+      if (type === 'tree' || type === 'list') return 'list';
+      if (type === 'kanban') return 'kanban';
+      if (type === 'form') return 'form';
+    }
+  }
+
+  return 'list';
 };
