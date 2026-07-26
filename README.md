@@ -21,21 +21,21 @@ The Odoo Enterprise Connect portal supports dynamic server endpoint selection, d
 | <img src="./docs/images/login-portal.png" width="400px" alt="Odoo Web Client Vue - Login Portal"/> | <img src="./docs/images/login-portal-compact.png" width="400px" alt="Odoo Web Client Vue - Compact Login Portal"/> |
 
 ### ⚏ 2. High-Fidelity Odoo Enterprise App Switcher
-Features a highly responsive CSS grid overlay with name-derived, auto-generated gradients, quick search filter options, and seamless waffle-menu navigation.
+Features a highly responsive CSS grid overlay with name-derived, auto-generated gradients, quick search filter options, and seamless waffle-menu navigation connected to a live Odoo 19 instance.
 
 <p align="center">
   <img src="./docs/images/app-switcher.png" width="800px" alt="Odoo Web Client Vue - App Switcher"/>
 </p>
 
-### ☰ 3. Dynamic List View & ControlPanel / SearchPanel
-Showcases the unified List view rendering engine complete with multi-faceted filtering, group-by logic, direct sidebar category selection, and paginated record navigation.
+### ☰ 3. Dynamic Purchase Order List View & Navigation Sidebar
+Showcases the unified List view rendering engine loaded with real Odoo 19 **`purchase.order`** (Requests for Quotation) columns, featuring multi-faceted filtering, group-by logic, direct categories sidebar navigation, and paginated record counters.
 
 <p align="center">
   <img src="./docs/images/list-view.png" width="800px" alt="Odoo Web Client Vue - List View"/>
 </p>
 
-### ▭ 4. Responsive Form View & Sheet Layout Card
-Implements Odoo's classic `<sheet>` card view with advanced responsive CSS grid layouts, aligning `<group>` elements and auto-binding labels cleanly across all screen sizes.
+### ▭ 4. Live Purchase Order Creation Form View (FormRenderer)
+Implements Odoo's classic `<sheet>` card view with advanced responsive CSS grid layouts, aligning `<group>` elements and auto-binding labels cleanly across all screen sizes for the live `purchase.order` model.
 
 <p align="center">
   <img src="./docs/images/form-view.png" width="800px" alt="Odoo Web Client Vue - Form View"/>
