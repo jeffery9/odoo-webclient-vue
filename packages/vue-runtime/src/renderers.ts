@@ -1,4 +1,6 @@
 import { defineComponent, h } from 'vue';
+import { Modifier } from '@odoo/sdk';
+import { componentRegistry } from './registry.js';
 
 export const ListRenderer = defineComponent({
   props: {
@@ -40,8 +42,49 @@ export const FormRenderer = defineComponent({
 
       if (node.tag === 'field') {
         const name = node.attrs?.name;
-        const val = props.record?.get(name);
-        return h('span', { class: 'o_field_widget' }, val !== undefined ? String(val) : '');
+
+        // Compile and evaluate standard Odoo modifiers
+        const spec = {
+          attrs: node.attrs?.attrs,
+          readonly: node.attrs?.readonly,
+          invisible: node.attrs?.invisible,
+          required: node.attrs?.required,
+          states: node.attrs?.states
+        };
+        const compiled = Modifier.compile(spec);
+        const evaluated = Modifier.evaluate(compiled, props.record as any, {});
+
+        // 1. If invisible, omit rendering completely
+        if (evaluated.invisible) {
+          return null;
+        }
+
+        // 2. Parse options from python dict syntax to JSON object
+        let optionsObj: any = {};
+        if (node.attrs?.options) {
+          try {
+            const cleaned = node.attrs.options
+              .replace(/'/g, '"')
+              .replace(/\bTrue\b/g, 'true')
+              .replace(/\bFalse\b/g, 'false');
+            optionsObj = JSON.parse(cleaned);
+          } catch (e) {
+            // fallback
+          }
+        }
+
+        // 3. Resolve actual widget from componentRegistry
+        const widgetName = node.attrs?.widget || 'char';
+        const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
+
+        return h(widgetComp, {
+          record: props.record,
+          name,
+          readonly: evaluated.readonly,
+          required: evaluated.required,
+          options: optionsObj,
+          class: evaluated.required ? 'o_required_modifier' : ''
+        });
       }
 
       if (node.children) {

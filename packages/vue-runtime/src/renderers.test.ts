@@ -1,9 +1,14 @@
 import { describe, test, expect } from 'vitest';
 import { h, defineComponent } from 'vue';
 import { ListRenderer, FormRenderer } from './renderers.js';
+import { componentRegistry } from './registry.js';
+import { FieldChar } from './widgets.js';
 import { RecordProxy } from '@odoo/sdk';
 
 describe('Odoo Vue View Renderers', () => {
+  // Register widget char for renderer resolving tests
+  componentRegistry.add('char', FieldChar);
+
   const listArch = {
     type: 'list',
     children: [
@@ -69,8 +74,57 @@ describe('Odoo Vue View Renderers', () => {
     expect(sheetDiv.props.class).toBe('o_form_sheet');
     
     const fieldRepresentation = sheetDiv.children[0];
-    expect(fieldRepresentation.type).toBe('span');
-    expect(fieldRepresentation.props.class).toBe('o_field_widget');
-    expect(fieldRepresentation.children).toBe('Screwdriver');
+    expect(fieldRepresentation.type).toBe(FieldChar);
+    expect(fieldRepresentation.props.name).toBe('name');
+    expect(fieldRepresentation.props.record).toBe(singleRecord);
+  });
+
+  test('should completely omit field node when invisible modifier evaluates to true', () => {
+    const formArch = {
+      type: 'form',
+      children: [
+        {
+          tag: 'sheet',
+          children: [
+            { tag: 'field', attrs: { name: 'name', invisible: 'True' } } // statically invisible
+          ]
+        }
+      ]
+    };
+
+    const singleRecord = new RecordProxy('product.product', { id: 1, name: 'Screwdriver' });
+    const formInstance = FormRenderer as any;
+
+    const renderFn = formInstance.setup({ arch: formArch, record: singleRecord }, {});
+    const vnode = renderFn();
+
+    const sheetDiv = vnode.children[0];
+    expect(sheetDiv.children.length).toBe(0); // field omitted!
+  });
+
+  test('should pass evaluated readonly and parsed options to the resolved widget', () => {
+    const formArch = {
+      type: 'form',
+      children: [
+        {
+          tag: 'sheet',
+          children: [
+            { tag: 'field', attrs: { name: 'name', readonly: 'True', options: "{'no_open': true}" } }
+          ]
+        }
+      ]
+    };
+
+    const singleRecord = new RecordProxy('product.product', { id: 1, name: 'Screwdriver' });
+    const formInstance = FormRenderer as any;
+
+    const renderFn = formInstance.setup({ arch: formArch, record: singleRecord }, {});
+    const vnode = renderFn();
+
+    const sheetDiv = vnode.children[0];
+    const fieldVnode = sheetDiv.children[0];
+
+    expect(fieldVnode.props.readonly).toBe(true);
+    expect(fieldVnode.props.options).toEqual({ no_open: true });
   });
 });
