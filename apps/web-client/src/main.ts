@@ -57,13 +57,17 @@ import {
   resolveDefaultViewType,
 } from './workspace/actions.js';
 import { MainWorkspace } from './workspace/MainWorkspace.js';
-import { registerCoreComponents } from '@odoo/vue-runtime';
+import { registerCoreComponents, componentRegistry } from '@odoo/vue-runtime';
+import { FieldCommunityDate } from './widgets/FieldCommunityDate.js';
 
 // Setup Router
 const router = new HashRouter();
 
 // Register all core Odoo Vue field widgets
 registerCoreComponents();
+
+// Override default date widget with premium Vue community DatePicker
+componentRegistry.add('date', FieldCommunityDate);
 
 const App = {
   name: 'App',

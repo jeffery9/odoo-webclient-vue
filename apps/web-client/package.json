@@ -9,6 +9,7 @@
   "dependencies": {
     "@odoo/sdk": "^0.1.0",
     "@odoo/vue-runtime": "^0.1.0",
+    "@vuepic/vue-datepicker": "^14.0.0",
     "vue": "^3.4.35"
   },
   "devDependencies": {

@@ -296,3 +296,27 @@ describe('Odoo Action Dynamic Default View Resolution', () => {
     expect(resolveDefaultViewType({})).toBe('list');
   });
 });
+
+import { componentRegistry } from '@odoo/vue-runtime';
+import { FieldCommunityDate } from '../src/widgets/FieldCommunityDate.js';
+
+describe('Odoo Vue Community Datepicker Adapter Integration', () => {
+  test('should successfully register FieldCommunityDate as date override', () => {
+    componentRegistry.add('date', FieldCommunityDate);
+    expect(componentRegistry.get('date')).toBe(FieldCommunityDate);
+  });
+
+  test('should compile FieldCommunityDate adapter props mapping', () => {
+    const record = new RecordProxy('res.partner', { birth_date: '1998-05-15' });
+    const widget = FieldCommunityDate;
+    
+    // Evaluate Vue render functional output
+    const renderFn = widget.setup({ record, name: 'birth_date', readonly: false }, {});
+    const vnode = renderFn();
+
+    // Verify it returns the premium VueDatePicker VNode component
+    expect(vnode.type).toBeDefined();
+    expect(vnode.props.format).toBe('yyyy-MM-dd');
+    expect(vnode.props.enableTimePicker).toBe(false);
+  });
+});
