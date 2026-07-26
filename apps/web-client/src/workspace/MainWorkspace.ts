@@ -30,6 +30,11 @@ export const MainWorkspace = {
       }
     };
 
+    const hasSearchPanel = () => {
+      if (!searchArch.value || searchArch.value.tag !== 'search') return false;
+      return searchArch.value.children?.some((c: any) => c.tag === 'searchpanel');
+    };
+
     return () => h('div', { class: 'o_action_manager' }, [
       // Left Navigation Subsection Sidebar
       activeMenu.value?.subsections ? h('aside', { class: 'o_sidebar' }, [
@@ -42,8 +47,8 @@ export const MainWorkspace = {
         ]))
       ]) : null,
 
-      // Left Search Panel (Odoo 19 Sidebar Filter View - only visible in list or kanban mode)
-      activeViewType.value !== 'form' ? h(SearchPanel, {
+      // Left Search Panel (Odoo 19 Sidebar Filter View - only visible in list or kanban mode on-demand)
+      activeViewType.value !== 'form' && hasSearchPanel() ? h(SearchPanel, {
         arch: searchArch.value,
         onFilterChange: handleFilterChange
       }) : null,
