@@ -307,3 +307,19 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 
 ### Task 19.2: Dynamic Fields Meta-Attributes Resolution (`fields_get` / `get_views` compatibility layer)
 - [ ] Support dynamic resolution of field attributes (e.g., string labels, options selection list, model relations) mapping custom ORM runtime modifications to `fields_get` or model meta-responses directly to UI rendering states.
+
+---
+
+## 🛡️ Phase 20: Legacy Drift Isolation & Anomaly Remediation (Supreme Principle Enforcement)
+
+### Task 20.1: Isolate RPC get_views & fields_views Legacy Quirks
+- [ ] Refactor RPCClient.call('get_views') in sdk/src/rpc/client.ts. Isolate the hardcoded mapping of Odoo 16+ tree to list view types and the fallback mapping of fields_views into a dedicated OdooLegacyAdapter class to keep the core RPC layer pristine.
+
+### Task 20.2: Encapsulate Legacy Modifier Expressions
+- [ ] Refactor Modifier.evaluate() in sdk/src/modifiers/modifier.ts. Move the branching logic that checks for legacy Odoo 14-16 Domain arrays (e.g., [('state', '=', 'draft')]) versus modern Odoo 19 Python AST expressions into an isolated ModifierDriftHandler.
+
+### Task 20.3: Centralize display_name Fallback Resolution
+- [ ] Refactor the hardcoded display_name string fallbacks in vue-runtime/src/widgets.ts (e.g., tagSuggestions, record?.name || record?.display_name, (model_name, id)) and sdk/src/orm/record.ts. Centralize this Odoo convention quirk into a single resolveDisplayName(record) pure utility inside the SDK context engine.
+
+### Task 20.4: Hardcoded Arch Fallback Abstraction
+- [ ] Refactor the hardcoded { tag: 'field', attrs: { name: 'display_name', string: 'Name' } } fallback AST injections currently spread across FieldMany2many and FieldOne2many in vue-runtime/src/widgets.ts. Move these structural anomalies into a dedicated ArchFallbackGenerator factory within the ArchCompiler.
