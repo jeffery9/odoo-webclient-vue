@@ -4,3 +4,4 @@ export * from './domain/index.js';
 export * from './context/index.js';
 export * from './modifiers/index.js';
 export * from './arch/index.js';
+//# sourceMappingURL=index.js.map

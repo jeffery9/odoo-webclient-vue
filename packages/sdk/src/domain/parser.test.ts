@@ -53,7 +53,7 @@ describe('Odoo Domain Normalizer', () => {
 
 describe('Odoo Domain Serializer (toRPC)', () => {
   test('should serialize single leaf node into simple array', () => {
-    const ast = ['state', '=', 'sale'] as const;
+    const ast = ['state', '=', 'sale'] as any;
     const rpc = Domain.toRPC(ast);
     expect(rpc).toEqual([['state', '=', 'sale']]);
   });

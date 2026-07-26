@@ -26,10 +26,10 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - [x] Write Vitest test suite for compiling Odoo `attrs` and testing active record states.
 
 ### Task 1.4: XML Arch & QWeb Compiler
-- [ ] Install `fast-xml-parser` as a workspace dependency.
-- [ ] Implement `ArchCompiler` to convert Odoo standard views (Form, List, Search) from XML string into standard Semantic JSON IR.
-- [ ] Implement `QWebCompiler` to parse directives (`t-if`, `t-foreach`, `t-esc`, `t-set`) into Semantic JSON IR blocks (`IfNode`, `ForNode`, `EscNode`).
-- [ ] Write Vitest test suite converting XML templates into clean, JSON-based AST outputs.
+- [x] Install `fast-xml-parser` as a workspace dependency.
+- [x] Implement `ArchCompiler` to convert Odoo standard views (Form, List, Search) from XML string into standard Semantic JSON IR.
+- [x] Implement `QWebCompiler` to parse directives (`t-if`, `t-foreach`, `t-esc`, `t-set`) into Semantic JSON IR blocks (`IfNode`, `ForNode`, `EscNode`).
+- [x] Write Vitest test suite converting XML templates into clean, JSON-based AST outputs.
 
 ---
 

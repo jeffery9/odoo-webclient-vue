@@ -87,7 +87,7 @@ export class Domain {
       const [field, op, val] = node;
       const recordVal = record[field];
 
-      switch (op) {
+      switch (op as string) {
         case '=':
         case '==':
           return recordVal === val;
