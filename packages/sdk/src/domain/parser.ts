@@ -140,4 +140,71 @@ export class Domain {
 
     return false;
   }
+
+  /**
+   * Safely parses a Python-like Odoo domain string into a standard Javascript array.
+   * Converts Python tuples/lists, booleans, and None to standard JSON-compatible arrays.
+   */
+  static parseString(domainStr: string): any[] {
+    if (!domainStr || domainStr.trim() === '') return [];
+    const trimmed = domainStr.trim();
+    if (trimmed === '[]' || trimmed === '()') return [];
+
+    let resultStr = '';
+    let inDoubleQuote = false;
+    let inSingleQuote = false;
+    let escapeActive = false;
+
+    for (let i = 0; i < trimmed.length; i++) {
+      const char = trimmed[i];
+
+      if (escapeActive) {
+        resultStr += char;
+        escapeActive = false;
+        continue;
+      }
+
+      if (char === '\\') {
+        resultStr += char;
+        escapeActive = true;
+        continue;
+      }
+
+      if (char === '"') {
+        if (!inSingleQuote) {
+          inDoubleQuote = !inDoubleQuote;
+        }
+        resultStr += char;
+      } else if (char === "'") {
+        if (!inDoubleQuote) {
+          inSingleQuote = !inSingleQuote;
+          resultStr += '"';
+        } else {
+          resultStr += char;
+        }
+      } else if (inDoubleQuote || inSingleQuote) {
+        resultStr += char;
+      } else {
+        if (char === '(') {
+          resultStr += '[';
+        } else if (char === ')') {
+          resultStr += ']';
+        } else {
+          resultStr += char;
+        }
+      }
+    }
+
+    try {
+      const sanitized = resultStr
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+        .replace(/\bNone\b/g, 'null');
+
+      return JSON.parse(sanitized);
+    } catch (e) {
+      console.error('Domain.parseString failed to parse Python domain string:', domainStr, e);
+      return [];
+    }
+  }
 }

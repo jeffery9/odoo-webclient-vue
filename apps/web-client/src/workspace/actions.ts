@@ -1,50 +1,7 @@
-import { RecordProxy, ArchCompiler, Context } from '@odoo/sdk';
+import { RecordProxy, ArchCompiler, Context, Domain } from '@odoo/sdk';
 import { activeClient, isConnecting } from '../auth/state.js';
 import { addNotification } from '../layout/notification.js';
 import { activeCompany } from '../auth/company.js';
-
-export const parseDomainString = (domainStr: string): any[] => {
-  if (!domainStr || domainStr.trim() === '') return [];
-  const trimmed = domainStr.trim();
-  if (trimmed === '[]' || trimmed === '()') return [];
-  
-  let resultStr = '';
-  let inDoubleQuote = false;
-  let inSingleQuote = false;
-  
-  for (let i = 0; i < trimmed.length; i++) {
-    const char = trimmed[i];
-    if (char === '"' && trimmed[i - 1] !== '\\') {
-      if (!inSingleQuote) inDoubleQuote = !inDoubleQuote;
-      resultStr += char;
-    } else if (char === "'" && trimmed[i - 1] !== '\\') {
-      if (!inDoubleQuote) inSingleQuote = !inSingleQuote;
-      resultStr += '"';
-    } else if (inDoubleQuote || inSingleQuote) {
-      resultStr += char;
-    } else {
-      if (char === '(') {
-        resultStr += '[';
-      } else if (char === ')') {
-        resultStr += ']';
-      } else {
-        resultStr += char;
-      }
-    }
-  }
-
-  try {
-    const sanitized = resultStr
-      .replace(/\bTrue\b/g, 'true')
-      .replace(/\bFalse\b/g, 'false')
-      .replace(/\bNone\b/g, 'null');
-      
-    return JSON.parse(sanitized);
-  } catch (e) {
-    console.error('Failed to parse Python domain string:', domainStr, e);
-  }
-  return [];
-};
 
 export const extractFieldsFromAST = (node: any, fieldsSet: Set<string>) => {
   if (!node) return;
@@ -196,7 +153,7 @@ export const executeAction = async (actionId: number, options?: { resetOffset?: 
     let actionDomain: any[] = [];
     if (action.domain) {
       if (typeof action.domain === 'string') {
-        actionDomain = parseDomainString(action.domain);
+        actionDomain = Domain.parseString(action.domain);
       } else if (Array.isArray(action.domain)) {
         actionDomain = action.domain;
       }
