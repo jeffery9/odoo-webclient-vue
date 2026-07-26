@@ -457,9 +457,11 @@ import { rendererRegistry } from '@odoo/vue-runtime';
 import { PremiumGraphRenderer } from './widgets/PremiumGraphRenderer.js';
 import { PremiumGanttRenderer } from './widgets/PremiumGanttRenderer.js';
 import { PremiumPivotRenderer } from './widgets/PremiumPivotRenderer.js';
+import { PremiumMapRenderer } from './widgets/PremiumMapRenderer.js';
 
 rendererRegistry.add('graph', PremiumGraphRenderer);
 rendererRegistry.add('gantt', PremiumGanttRenderer);
 rendererRegistry.add('pivot', PremiumPivotRenderer);
+rendererRegistry.add('map', PremiumMapRenderer);
 
 createApp(App).mount('#app');

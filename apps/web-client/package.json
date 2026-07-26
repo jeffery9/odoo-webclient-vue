@@ -12,6 +12,7 @@
     "@vuepic/vue-datepicker": "^14.0.0",
     "echarts": "^6.1.0",
     "frappe-gantt": "^1.2.2",
+    "leaflet": "^1.9.4",
     "vue": "^3.4.35",
     "vue-echarts": "^8.0.1",
     "vue-pivottable": "^1.4.1"

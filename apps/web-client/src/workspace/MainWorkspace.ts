@@ -223,8 +223,14 @@ export const MainWorkspace = {
               records: filteredRecords.value
             }) : null,
 
-            // Fallback for other advanced views (e.g. cohort, map, grid, qweb)
-            !['graph', 'pivot', 'calendar', 'activity', 'gantt'].includes(activeViewType.value) ? h('div', {
+            // Render Map view
+            activeViewType.value === 'map' ? h(rendererRegistry.has('map') ? rendererRegistry.get('map') : null, {
+              arch: viewArchs.value.map,
+              records: filteredRecords.value
+            }) : null,
+
+            // Fallback for other advanced views (e.g. cohort, grid, qweb)
+            !['graph', 'pivot', 'calendar', 'activity', 'gantt', 'map'].includes(activeViewType.value) ? h('div', {
               class: 'o_view_nocontent',
               style: 'padding: 40px; text-align: center; color: #475569; background: white; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center;'
             }, [
