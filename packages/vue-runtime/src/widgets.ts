@@ -589,15 +589,26 @@ export const FieldTag = defineComponent({
     const showDropdown = ref(false);
     const containerRef = ref<HTMLElement | null>(null);
 
-    const tagSuggestions = [
-      'VIP Customer',
-      'Services',
-      'Consulting',
-      'Internal',
-      'Supplier',
-      'SaaS Partner',
-      'Odoo Expert',
-    ];
+    const tagSuggestions = ref<string[]>([]);
+
+    const fetchSuggestions = async () => {
+      const session = props.record?.model?.session;
+      if (session?.rpc) {
+        try {
+          const relationModel = props.relation || 'res.partner.category';
+          const res = await session.rpc({
+            model: relationModel,
+            method: 'search_read',
+            args: [[], ['name', 'display_name']]
+          });
+          if (Array.isArray(res)) {
+            tagSuggestions.value = res.map((r: any) => r.display_name || r.name || '');
+          }
+        } catch (e) {
+          // fallback silently for standalone runs
+        }
+      }
+    };
 
     const getColor = (rec: any) => {
       const id = rec?.id || (rec?.get ? rec.get('id') : null) || (Array.isArray(rec) ? rec[0] : 0) || 0;
@@ -663,6 +674,7 @@ export const FieldTag = defineComponent({
     if (hasInstance) {
       onMounted(() => {
         window.addEventListener('click', handleClickOutside);
+        fetchSuggestions();
       });
       onUnmounted(() => {
         window.removeEventListener('click', handleClickOutside);
@@ -736,8 +748,8 @@ export const FieldTag = defineComponent({
           class: 'o_tag_dropdown',
           style: 'position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 1000; max-height: 180px; overflow-y: auto;'
         }, [
-          tagSuggestions
-            .filter(s => {
+          tagSuggestions.value
+            .filter((s: string) => {
               const alreadySelected = childRecords.some((rec: any) => {
                 const nameVal = rec?.get 
                   ? rec.get('display_name') || rec.get('name') 
@@ -747,13 +759,13 @@ export const FieldTag = defineComponent({
               const matchesKeyword = s.toLowerCase().includes(inputVal.value.toLowerCase());
               return !alreadySelected && matchesKeyword;
             })
-            .map(sug => h('div', {
+            .map((sug: string) => h('div', {
               class: 'o_tag_dropdown_item',
               style: 'padding: 8px 12px; font-size: 13px; cursor: pointer; color: #334155; hover: background: #f1f5f9; display: flex; align-items: center;',
               onClick: (e: Event) => selectSuggestion(sug, e)
             }, sug)),
 
-          inputVal.value.trim() && !tagSuggestions.some(s => s.toLowerCase() === inputVal.value.trim().toLowerCase()) ? h('div', {
+          inputVal.value.trim() && !tagSuggestions.value.some((s: string) => s.toLowerCase() === inputVal.value.trim().toLowerCase()) ? h('div', {
             class: 'o_tag_dropdown_item_create',
             style: 'padding: 8px 12px; font-size: 13px; cursor: pointer; color: #714B67; font-weight: 500; background: #faf5f8; border-top: 1px solid #f3e8ff;',
             onClick: (e: Event) => {
@@ -764,6 +776,70 @@ export const FieldTag = defineComponent({
           }, `Create "${inputVal.value.trim()}"...`) : null
         ]) : null
       ]);
+    };
+  }
+});
+
+export const FieldAvatar = defineComponent({
+  name: 'FieldAvatar',
+  props: {
+    record: { type: Object, required: true },
+    name: { type: String, required: true },
+    readonly: { type: Boolean, default: false }
+  },
+  setup(props) {
+    const getInitials = (name: string) => {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return parts[0].substring(0, 2).toUpperCase();
+    };
+
+    const getAvatarBg = (idVal: any, nameVal: string) => {
+      const stringToHash = String(idVal || nameVal || '');
+      let hash = 0;
+      for (let i = 0; i < stringToHash.length; i++) {
+        hash = stringToHash.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const colorIndex = Math.abs(hash) % TAG_COLORS.length;
+      return TAG_COLORS[colorIndex];
+    };
+
+    return () => {
+      const val = props.record?.get(props.name);
+      
+      const id = Array.isArray(val) ? val[0] : (val?.id || 0);
+      const displayName = Array.isArray(val) ? val[1] : (val?.display_name || val?.name || String(val || ''));
+
+      if (!displayName) {
+        return h('div', {
+          class: 'o_avatar_placeholder',
+          style: 'width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: #94a3b8; border: 1px solid #cbd5e1;'
+        }, '👤');
+      }
+
+      const isBase64 = typeof val === 'string' && val.startsWith('data:image');
+      const isUrl = typeof val === 'string' && (val.startsWith('http') || val.startsWith('/'));
+
+      if (isBase64 || isUrl) {
+        return h('img', {
+          class: 'o_field_avatar',
+          src: val,
+          alt: displayName,
+          style: 'width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; display: inline-block;'
+        });
+      }
+
+      const initials = getInitials(displayName);
+      const color = getAvatarBg(id, displayName);
+
+      return h('div', {
+        class: 'o_field_avatar o_avatar_initials',
+        title: displayName,
+        style: `width: 32px; height: 32px; border-radius: 50%; background: ${color.bg}; color: ${color.text}; border: 1px solid ${color.border}; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; cursor: default;`
+      }, initials);
     };
   }
 });
@@ -822,6 +898,7 @@ export function registerCoreComponents() {
   componentRegistry.add('priority', FieldPriority);
   componentRegistry.add('image', FieldImage);
   componentRegistry.add('handle', FieldHandle);
+  componentRegistry.add('avatar', FieldAvatar);
   componentRegistry.add('tag', FieldTag);
   componentRegistry.add('many2many_tags', FieldTag);
   componentRegistry.add('percentage', FieldPercentage);

@@ -3,26 +3,33 @@ import { Modifier } from '@odoo/sdk';
 import { componentRegistry, modelFieldRegistry } from './registry.js';
 import { ACTION_MANAGER_KEY } from './di.js';
 
-const WIDGET_COMPATIBILITY_MAP: Record<string, string[]> = {
-  'boolean': ['boolean'],
-  'integer': ['integer', 'float', 'monetary'],
-  'float': ['integer', 'float', 'monetary'],
-  'monetary': ['integer', 'float', 'monetary'],
-  'progressbar': ['integer', 'float', 'monetary'],
-  'percentage': ['integer', 'float', 'monetary'],
-  'priority': ['integer', 'selection', 'char'],
-  'badge': ['selection', 'char', 'integer'],
-  'tag': ['many2many', 'one2many'],
-  'many2many_tags': ['many2many', 'one2many'],
-  'many2one': ['many2one'],
-  'one2many': ['one2many', 'many2many'],
-  'many2many': ['many2many', 'one2many'],
-  'date': ['date', 'datetime'],
-  'datetime': ['datetime', 'date'],
-  'image': ['binary', 'char', 'text'],
-  'url': ['char', 'text'],
-  'email': ['char', 'text'],
-  'phone': ['char', 'text'],
+interface WidgetContract {
+  fields: string[];
+  views: string[];
+}
+
+const WIDGET_COMPATIBILITY_MAP: Record<string, WidgetContract> = {
+  'boolean': { fields: ['boolean'], views: ['form', 'list', 'kanban'] },
+  'integer': { fields: ['integer', 'float', 'monetary'], views: ['form', 'list', 'kanban'] },
+  'float': { fields: ['integer', 'float', 'monetary'], views: ['form', 'list', 'kanban'] },
+  'monetary': { fields: ['integer', 'float', 'monetary'], views: ['form', 'list', 'kanban'] },
+  'progressbar': { fields: ['integer', 'float', 'monetary'], views: ['form', 'list', 'kanban'] },
+  'percentage': { fields: ['integer', 'float', 'monetary'], views: ['form', 'list', 'kanban'] },
+  'priority': { fields: ['integer', 'selection', 'char'], views: ['form', 'list', 'kanban'] },
+  'badge': { fields: ['selection', 'char', 'integer'], views: ['form', 'list', 'kanban'] },
+  'tag': { fields: ['many2many', 'one2many'], views: ['form', 'list', 'kanban'] },
+  'many2many_tags': { fields: ['many2many', 'one2many'], views: ['form', 'list', 'kanban'] },
+  'many2one': { fields: ['many2one'], views: ['form', 'list', 'kanban'] },
+  'one2many': { fields: ['one2many', 'many2many'], views: ['form'] },
+  'many2many': { fields: ['many2many', 'one2many'], views: ['form'] },
+  'date': { fields: ['date', 'datetime'], views: ['form', 'list', 'kanban'] },
+  'datetime': { fields: ['datetime', 'date'], views: ['form', 'list', 'kanban'] },
+  'image': { fields: ['binary', 'char', 'text'], views: ['form', 'kanban'] },
+  'avatar': { fields: ['many2one', 'char', 'integer'], views: ['list', 'kanban'] },
+  'url': { fields: ['char', 'text'], views: ['form', 'list', 'kanban'] },
+  'email': { fields: ['char', 'text'], views: ['form', 'list', 'kanban'] },
+  'phone': { fields: ['char', 'text'], views: ['form', 'list', 'kanban'] },
+  'handle': { fields: ['integer'], views: ['list'] },
 };
 
 export function getFieldType(fieldName: string, record: any): string {
@@ -43,17 +50,22 @@ export function getFieldType(fieldName: string, record: any): string {
   return 'char';
 }
 
-export function resolveFieldWidget(fieldName: string, record: any, nodeAttrs: any): string {
+export function resolveFieldWidget(fieldName: string, record: any, nodeAttrs: any, viewType: string = 'form'): string {
   const fieldType = getFieldType(fieldName, record);
 
   if (nodeAttrs?.widget) {
     const widget = nodeAttrs.widget;
-    const compatibleTypes = WIDGET_COMPATIBILITY_MAP[widget];
-    if (compatibleTypes && !compatibleTypes.includes(fieldType)) {
-      console.warn(
-        `[Odoo Compatibility Warning] Widget "${widget}" is incompatible with field "${fieldName}" of type "${fieldType}". Falling back to default widget "${fieldType}".`
-      );
-      return fieldType;
+    const contract = WIDGET_COMPATIBILITY_MAP[widget];
+    if (contract) {
+      const isFieldCompatible = contract.fields.includes(fieldType);
+      const isViewCompatible = contract.views.includes(viewType);
+      
+      if (!isFieldCompatible || !isViewCompatible) {
+        console.warn(
+          `[Odoo Compatibility Warning] Widget "${widget}" is incompatible with field "${fieldName}" (type "${fieldType}") in view "${viewType}". Falling back to default widget "${fieldType}".`
+        );
+        return fieldType;
+      }
     }
     return widget;
   }
@@ -85,7 +97,7 @@ export const ListRenderer = defineComponent({
         const tdVNodes = archFields.map((f: any) => {
           const fieldName = f.attrs.name;
           if (editable) {
-            const widgetName = resolveFieldWidget(fieldName, rec, f.attrs);
+            const widgetName = resolveFieldWidget(fieldName, rec, f.attrs, 'list');
             const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
             return h('td', null, h(widgetComp, {
               record: rec,
@@ -212,7 +224,7 @@ export const FormRenderer = defineComponent({
         }
 
         // 3. Resolve actual widget from componentRegistry
-        const widgetName = resolveFieldWidget(name, props.record, node.attrs);
+        const widgetName = resolveFieldWidget(name, props.record, node.attrs, 'form');
         const widgetComp = componentRegistry.has(widgetName) ? componentRegistry.get(widgetName) : componentRegistry.get('char');
 
         return h(widgetComp, {

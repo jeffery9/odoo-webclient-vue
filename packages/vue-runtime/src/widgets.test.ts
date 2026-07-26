@@ -24,6 +24,7 @@ import {
   FieldImage,
   FieldHandle,
   FieldTag,
+  FieldAvatar,
   FieldPercentage
 } from './widgets.js';
 import { RecordProxy } from '@odoo/sdk';
@@ -53,6 +54,7 @@ describe('Odoo Vue Base UI Widgets', () => {
   componentRegistry.add('image', FieldImage);
   componentRegistry.add('handle', FieldHandle);
   componentRegistry.add('tag', FieldTag);
+  componentRegistry.add('avatar', FieldAvatar);
   componentRegistry.add('percentage', FieldPercentage);
 
   test('should compile and register FieldChar input widget', () => {
@@ -410,5 +412,43 @@ describe('Odoo Vue Base UI Widgets', () => {
 
     // 6. Assert default fallback
     expect(resolveFieldWidget('unregistered_field', record, {})).toBe('char');
+
+    // 7. Assert View Type Constraints (e.g. handle is incompatible with form views!)
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const formResolved = resolveFieldWidget('sequence', record, { widget: 'handle' }, 'form');
+    expect(formResolved).toBe('integer'); // Incompatible on form view! Falls back to native type 'integer'
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+
+    // 8. Assert View Type Constraints (handle is compatible on list view!)
+    const listResolved = resolveFieldWidget('sequence', record, { widget: 'handle' }, 'list');
+    expect(listResolved).toBe('handle'); // Compatible on list!
+  });
+
+  test('should render FieldAvatar initials, image and fallback placeholders correctly', () => {
+    const record = new RecordProxy('res.partner', {
+      user_id: [101, 'Marc Demo'],
+      profile_pic: 'http://example.com/pic.png',
+      no_name_field: null
+    });
+
+    const avatarWidget = componentRegistry.get('avatar') as any;
+
+    // 1. Initials avatar fallback (many2one format)
+    const initialsVnode = avatarWidget.setup({ record, name: 'user_id' }, {})();
+    expect(initialsVnode.type).toBe('div');
+    expect(initialsVnode.props.class).toBe('o_field_avatar o_avatar_initials');
+    expect(initialsVnode.children).toBe('MD'); // Marc Demo initials
+
+    // 2. Image avatar rendering
+    const imgVnode = avatarWidget.setup({ record, name: 'profile_pic' }, {})();
+    expect(imgVnode.type).toBe('img');
+    expect(imgVnode.props.class).toBe('o_field_avatar');
+    expect(imgVnode.props.src).toBe('http://example.com/pic.png');
+
+    // 3. Fallback placeholder
+    const placeholderVnode = avatarWidget.setup({ record, name: 'no_name_field' }, {})();
+    expect(placeholderVnode.props.class).toBe('o_avatar_placeholder');
+    expect(placeholderVnode.children).toBe('👤');
   });
 });
