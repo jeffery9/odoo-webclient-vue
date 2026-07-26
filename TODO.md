@@ -67,9 +67,9 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ## 🧭 Phase 4: Business Dispatching (Action & Router)
 
 ### Task 4.1: Action Runtime
-- [ ] Implement `ActionManager` maintaining the active action stack.
-- [ ] Handle window actions (`ir.actions.act_window`), client actions, and dynamic view-mode switching.
-- [ ] Implement navigation trace utilities (Breadcrumbs) and dialog state stacks.
+- [x] Implement `ActionManager` maintaining the active action stack.
+- [x] Handle window actions (`ir.actions.act_window`), client actions, and dynamic view-mode switching.
+- [x] Implement navigation trace utilities (Breadcrumbs) and dialog state stacks.
 
 ### Task 4.2: Router Sync
 - [ ] Map action state and active records (`id`, `view_type`, `model`) to browser URL hashes.
