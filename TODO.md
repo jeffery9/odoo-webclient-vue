@@ -350,9 +350,9 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 - **Odoo Drift**: Odoo 19's OWL client tightly couples components to a global `env.services` namespace (e.g. notifications, RPC, actions). This prevents standard Dependency Injection (DI), blocks clean isolated component testing, and prevents runtimes from being cleanly embedded in third-party micro-frontends.
 - **SDK Remediation**: Enforce a strict Dependency Injection (DI) bus via standard framework primitives (e.g. Vue `provide`/`inject` or React context) mapping client services to local DI boundaries instead of relying on any global window-level pollution.
 
-### Task 21.6: WebBus / Longpolling Coupled Domain Handlers
-- **Odoo Drift**: Odoo's live notification bus is deeply entangled with mail/discuss schemas. Removing or unlinking the standard discuss/chatter mail modules often results in client-side runtime compilation crashes as the JS bus client fails to dynamically resolve discuss-specific channel listeners.
-- **SDK Remediation**: Enforce a pure, generic WebSocket client (`OdooBusClient`) in `@odoo/sdk` that is completely decoupled from any business schema, dispatching standard topic events to registered observers without hardcoded mail model expectations.
+### Task 21.6: WebBus / Longpolling Core Messaging Standardization
+- **Odoo Drift**: Odoo's native WebSocket bus (`bus.bus`) carries highly complex and historically volatile JSON notification envelopes. Instead of a messy client-side fallback array, this must be integrated into a unified realtime dispatching layer.
+- **SDK Remediation**: Build our standard `OdooBusClient` to serve as the unified real-time protocol foundation. All Odoo bus channels (`mail.record.thread`, `mail.box`) must be mapped dynamically to standard, type-safe events, providing the backbone for standard live chatter and messaging.
 
 ### Task 21.7: Dynamic Asset Bundling CSS/JS Pollution (`/web/assets` bundle loading)
 - **Odoo Drift**: The Odoo backend dynamically bundles and injects compiled script/style tags into the browser DOM at runtime based on active database modules. This results in global namespace collisions, unmanageable CSS stylesheet cascades, and memory leaks.
@@ -361,4 +361,28 @@ This TODO board tracks the atomic engineering tasks for the development of the O
 ### Task 21.8: Localized Currency/Float Cache Drifts (Locale String Pollution)
 - **Odoo Drift**: Odoo 19 widgets often format floats based on active user locales (e.g. `1.000,50` vs `1,000.50`) and cache these formatted strings directly in the active record transactional dictionary, resulting in downstream float-to-string write exceptions during database RPC updates.
 - **SDK Remediation**: Enforce a strict separation of presentation and transactional values. The active `RecordProxy` must strictly store pure JavaScript types (`Number`, `Date`, `Boolean`) inside its transactional cache, while localized formatting utilities format values on-demand only at the visual renderer border.
+
+---
+
+## 💬 Phase 22: Collaborative Enterprise Chatter & Mail Thread Engine
+
+*(Collaborative messaging, internal notes, followers, and activity logs are not optional addons—they are the heartbeat of the Odoo Enterprise UX. This phase establishes the Discuss and Chatter engine as first-class, core standards of our SDK client.)*
+
+### Task 22.1: Standard Record-Level Chatter Widget (`oe_chatter`)
+- [ ] Build a high-performance, responsive Vue-runtime chatter widget mapping to the `<div class="oe_chatter">` tag.
+- [ ] Support three standard functional tabs: "Send Message" (email to followers), "Log Note" (internal metadata notes), and "Schedule Activity".
+- [ ] Support real-time follower listing (`mail.followers`) and follower additions/removals.
+
+### Task 22.2: Standard Discuss Dashboard Workspace (`mail.box` Client Action)
+- [ ] Implement a full-viewport, beautiful Discuss workspace containing three key panels:
+  - Sidebar: Direct Messages (DMs), channels, group channels, and unread badges.
+  - Chat Area: Infinite-scroll message thread list with user avatars, hover reaction triggers, and markdown formatting.
+  - Control Box: Rich-text messaging inputs supporting file drops and user mentions (`@`).
+
+### Task 22.3: Unified Live Bus Notifications Routing
+- [ ] Wire our standard `OdooBusClient` to the global notification state. Real-time messages broadcasted via Odoo's backend bus must dynamically pop up in-app notification toasts and increment the top-bar unread counter badges.
+
+### Task 22.4: Native `ir.attachment` Upload & Drag-and-Drop Pipeline
+- [ ] Implement native drag-and-drop file attachment uploads integrated directly within the `oe_chatter` notes box and discuss editor.
+- [ ] Support uploading blobs dynamically via the standard Odoo ORM `create` endpoint mapping to the `ir.attachment` model, showing inline progress indicators and file type icons.
 
