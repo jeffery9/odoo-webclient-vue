@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { RPCClient, SessionManager } from '@odoo/sdk';
 import { getSavedConfig, saveConfig } from '../config.js';
 import { addNotification } from '../layout/notification.js';
+import { loadCompaniesFromSession } from './company.js';
 
 const savedConfig = getSavedConfig();
 
@@ -31,6 +32,9 @@ export const handleConnect = async (onSuccess: (client: RPCClient) => Promise<vo
     const client = new RPCClient({ endpoint: hostUrl.value });
     const session = new SessionManager(client);
     await session.login(dbName.value, username.value, password.value);
+
+    // Dynamic multi-company load from session response metadata
+    loadCompaniesFromSession(session);
 
     activeClient.value = client;
     isAuthenticated.value = true;

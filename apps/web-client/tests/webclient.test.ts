@@ -41,7 +41,19 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     
     const requestSpy = vi.spyOn(client, 'request').mockImplementation(async (urlPath, params) => {
       if (urlPath === '/web/session/authenticate') {
-        return { uid: 1, name: 'Administrator', db: 'demo' };
+        return {
+          uid: 1,
+          name: 'Administrator',
+          db: 'demo',
+          company_id: 1,
+          user_companies: {
+            current_company: [1, 'San Francisco HQ'],
+            allowed_companies: {
+              '1': { id: 1, name: 'San Francisco HQ' },
+              '2': { id: 2, name: 'Chicago Branch' }
+            }
+          }
+        };
       }
       if (urlPath === '/web/webclient/load_menus') {
         return mockMenus;
