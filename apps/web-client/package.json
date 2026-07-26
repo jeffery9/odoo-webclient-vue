@@ -7,10 +7,12 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "@odoo/sdk": "^0.1.0",
     "@odoo/vue-runtime": "^0.1.0",
     "@vuepic/vue-datepicker": "^14.0.0",
     "echarts": "^6.1.0",
+    "element-plus": "^2.14.3",
     "frappe-gantt": "^1.2.2",
     "leaflet": "^1.9.4",
     "pinyin-match": "^1.2.10",

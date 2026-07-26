@@ -12,8 +12,8 @@ import {
 import { RecordProxy } from '@odoo/sdk';
 import { activeMenu } from '../layout/state.js';
 import { isConnecting } from '../auth/state.js';
-import { SearchPanel } from './SearchPanel.js';
-import { PremiumAdvancedSearchBar } from './PremiumAdvancedSearchBar.js';
+import { OdooSearchPanel } from './OdooSearchPanel.js';
+import { OdooControlPanel } from './OdooControlPanel.js';
 import { addNotification } from '../layout/notification.js';
 import {
   activeViewType,
@@ -36,9 +36,18 @@ export const MainWorkspace = {
   },
   setup(props: { onSelectRecord: (rec: RecordProxy) => void }) {
     const isPrinting = ref(false);
+    const activeGroupByFields = ref<string[]>([]);
 
     const handleFilterChange = async (domains: any[]) => {
       searchPanelDomain.value = domains;
+      if (activeAction.value) {
+        await executeAction(activeAction.value.id, { resetOffset: true });
+      }
+    };
+
+    const handleSearchChange = async ({ domain, groupBy }: { domain: any[], groupBy: string[] }) => {
+      searchPanelDomain.value = domain;
+      activeGroupByFields.value = groupBy;
       if (activeAction.value) {
         await executeAction(activeAction.value.id, { resetOffset: true });
       }
@@ -70,7 +79,7 @@ export const MainWorkspace = {
       ]) : null,
 
       // Left Search Panel (only visible for act_window actions)
-      (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value !== 'form' && hasSearchPanel() ? h(SearchPanel, {
+      (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value !== 'form' && hasSearchPanel() ? h(OdooSearchPanel, {
         arch: searchArch.value,
         onFilterChange: handleFilterChange
       }) : null,
@@ -160,10 +169,10 @@ export const MainWorkspace = {
             ])
           ]) : null,
 
-          // Render Chinese Premium Advanced Search Bar (only for window actions when view is not form)
-          !isConnecting.value && (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value !== 'form' ? h(PremiumAdvancedSearchBar, {
+          // Render Chinese Odoo Control Panel (only for window actions when view is not form)
+          !isConnecting.value && (!activeAction.value || activeAction.value?.type === 'ir.actions.act_window') && activeViewType.value !== 'form' ? h(OdooControlPanel, {
             arch: searchArch.value,
-            onSearch: handleFilterChange
+            onSearchChange: handleSearchChange
           }) : null,
 
           // 3. Act Window - List Rendering
