@@ -22,7 +22,9 @@
         border-radius: 0;
         padding: 0;
         background: #f1f2f4;
+        position: relative;
       }
+
       /* Top Navbar */
       .o_main_navbar {
         height: 46px;
@@ -34,6 +36,7 @@
         color: white;
         font-size: 14px;
         flex-shrink: 0;
+        z-index: 100;
       }
       .o_navbar_left {
         display: flex;
@@ -44,6 +47,15 @@
         font-weight: bold;
         font-size: 16px;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 6px 12px;
+        border-radius: 4px;
+      }
+      .o_menu_brand:hover {
+        background-color: rgba(255, 255, 255, 0.2);
       }
       .o_navbar_apps {
         display: flex;
@@ -88,6 +100,7 @@
         justify-content: space-between;
         align-items: center;
         flex-shrink: 0;
+        z-index: 90;
       }
       .o_cp_left {
         display: flex;
@@ -159,6 +172,7 @@
         color: #0369a1;
         border-color: #7dd3fc;
       }
+
       /* View switchers */
       .o_cp_switch_buttons {
         display: flex;
@@ -184,13 +198,90 @@
         font-weight: bold;
       }
 
-      /* Content Area */
+      /* Control Panel Pager */
+      .o_pager {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #495057;
+      }
+      .o_pager_value {
+        font-weight: 500;
+      }
+      .o_pager_btn {
+        background-color: white;
+        border: 1px solid #ced4da;
+        padding: 2px 6px;
+        font-size: 11px;
+        font-weight: bold;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .o_pager_btn:hover {
+        background-color: #f1f2f4;
+      }
+      .o_pager_btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Content Area with dynamic Sidebar Flex Split */
+      .o_action_manager {
+        display: flex;
+        flex-grow: 1;
+        overflow: hidden;
+      }
+
+      /* Sidebar Left menu layout */
+      .o_sidebar {
+        flex: 0 0 230px;
+        background-color: #ffffff;
+        border-right: 1px solid #dee2e6;
+        display: flex;
+        flex-direction: column;
+        padding: 16px 0;
+        overflow-y: auto;
+      }
+      .o_sidebar_section {
+        margin-bottom: 16px;
+      }
+      .o_sidebar_section_title {
+        font-size: 11px;
+        font-weight: bold;
+        color: #adb5bd;
+        padding: 0 16px 4px 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .o_sidebar_link {
+        display: block;
+        padding: 8px 16px;
+        font-size: 13px;
+        color: #495057;
+        text-decoration: none;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+      }
+      .o_sidebar_link:hover {
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+      .o_sidebar_link.active {
+        background-color: #f1f2f4;
+        color: #714B67;
+        font-weight: 600;
+        border-left-color: #714B67;
+      }
+
+      /* Content Area Right */
       .o_content {
         flex-grow: 1;
         overflow-y: auto;
         padding: 16px;
         display: flex;
         flex-direction: column;
+        background-color: #f1f2f4;
       }
 
       /* Base buttons styling */
@@ -254,6 +345,38 @@
         background-color: #f8f9fa;
       }
 
+      /* Card Grid styling for Kanban */
+      .o_kanban_view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+        width: 100%;
+      }
+      .o_kanban_record {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .o_kanban_record:hover {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        border-color: #ced4da;
+      }
+      .o_kanban_title {
+        font-size: 14px;
+        font-weight: bold;
+        color: #212529;
+      }
+      .o_kanban_subtitle {
+        font-size: 12px;
+        color: #64748b;
+      }
+
       /* Form sheet card */
       .o_form_sheet_bg {
         background-color: #f1f2f4;
@@ -274,11 +397,89 @@
         min-height: 400px;
       }
 
-      /* Connect Modal styling */
-      .o_connect_btn {
-        background-color: #24292e;
+      /* Enterprise App Switcher Grid Overlay */
+      .o_app_switcher {
+        position: fixed;
+        top: 46px; /* below navbar */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at center, #3d233c 0%, #1e132b 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 40px;
+        z-index: 500;
         color: white;
-        border: 1px solid #24292e;
+        overflow-y: auto;
+      }
+      .o_switcher_search {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 30px;
+        width: 400px;
+        max-width: 90%;
+        display: flex;
+        align-items: center;
+        padding: 10px 20px;
+        gap: 12px;
+        margin-bottom: 40px;
+      }
+      .o_switcher_search_input {
+        border: none;
+        background: transparent;
+        outline: none;
+        color: white;
+        font-size: 16px;
+        width: 100%;
+      }
+      .o_switcher_search_input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .o_app_grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 24px;
+        width: 800px;
+        max-width: 90%;
+        justify-content: center;
+      }
+      .o_app_tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        padding: 12px;
+        border-radius: 8px;
+        transition: transform 0.15s ease, background-color 0.15s ease;
+      }
+      .o_app_tile:hover {
+        transform: scale(1.08);
+        background-color: rgba(255, 255, 255, 0.08);
+      }
+      .o_app_icon_box {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .o_app_label {
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      /* Connection Modal styling */
+      .o_connect_btn {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.25);
         padding: 6px 12px;
         font-size: 12px;
         font-weight: 600;
@@ -287,6 +488,9 @@
         display: flex;
         align-items: center;
         gap: 6px;
+      }
+      .o_connect_btn:hover {
+        background-color: rgba(255, 255, 255, 0.25);
       }
       .o_connect_btn.connected {
         background-color: #22c55e;
