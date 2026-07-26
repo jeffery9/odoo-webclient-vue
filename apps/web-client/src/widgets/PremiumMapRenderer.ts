@@ -129,6 +129,31 @@ export const PremiumMapRenderer = defineComponent({
     return () => h('div', {
       style: 'background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px;'
     }, [
+      // Inject CSS overrides directly to align Leaflet with Odoo brand design
+      h('style', null, `
+        .leaflet-bar {
+          border: none !important;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        .leaflet-bar a {
+          background-color: white !important;
+          color: #475569 !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+          transition: all 0.2s !important;
+        }
+        .leaflet-bar a:hover {
+          background-color: #f8fafc !important;
+          color: #714B67 !important;
+        }
+        .leaflet-popup-content-wrapper {
+          border-radius: 8px !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+          border: 1px solid #e2e8f0 !important;
+        }
+        .leaflet-popup-tip {
+          box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+        }
+      `),
       h('div', { style: 'display: flex; flex-direction: column; gap: 4px;' }, [
         h('h3', { style: 'margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Interactive Geographic Map'),
         h('p', { style: 'margin: 0; font-size: 12px; color: #64748b;' }, 'Geographical analysis of active Odoo partners and regional clustering.')

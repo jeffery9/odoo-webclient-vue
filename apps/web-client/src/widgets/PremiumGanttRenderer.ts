@@ -97,6 +97,51 @@ export const PremiumGanttRenderer = defineComponent({
     return () => h('div', {
       style: 'background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px;'
     }, [
+      // Inject CSS overrides directly for frappe-gantt to align with Odoo branding
+      h('style', null, `
+        .gantt .bar-wrapper .bar {
+          fill: #714B67 !important;
+          rx: 4px !important;
+        }
+        .gantt .bar-wrapper .bar-progress {
+          fill: #01A299 !important;
+        }
+        .gantt .grid-header {
+          fill: #f8fafc !important;
+          stroke: #e2e8f0 !important;
+        }
+        .gantt .grid-row {
+          fill: #ffffff !important;
+        }
+        .gantt .grid-row:nth-child(even) {
+          fill: #f8fafc !important;
+        }
+        .gantt .tick {
+          stroke: #f1f5f9 !important;
+        }
+        .gantt .lower-header text {
+          fill: #64748b !important;
+          font-family: system-ui, sans-serif !important;
+          font-size: 11px !important;
+        }
+        .gantt .upper-header text {
+          fill: #475569 !important;
+          font-weight: 600 !important;
+          font-family: system-ui, sans-serif !important;
+          font-size: 12px !important;
+        }
+        .gantt .handle {
+          fill: #714B67 !important;
+        }
+        .gantt .popup-wrapper {
+          background: #1e293b !important;
+          border-radius: 6px !important;
+          color: white !important;
+          font-family: system-ui, sans-serif !important;
+          padding: 8px 12px !important;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+      `),
       h('div', { style: 'display: flex; align-items: center; justify-content: space-between;' }, [
         h('h3', { style: 'margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Interactive Gantt Schedule'),
         h('div', { style: 'display: flex; gap: 8px;' }, [
