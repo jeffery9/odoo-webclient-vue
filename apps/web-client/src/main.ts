@@ -59,7 +59,7 @@ import {
   resolveDefaultViewType,
 } from './workspace/actions.js';
 import { MainWorkspace } from './workspace/MainWorkspace.js';
-import { registerCoreComponents, componentRegistry } from '@odoo/vue-runtime';
+import { registerCoreComponents, componentRegistry, OdooDialogOutlet } from '@odoo/vue-runtime';
 import { PremiumFieldDate } from './widgets/PremiumFieldDate.js';
 
 // Setup Router
@@ -476,7 +476,10 @@ const App = {
             }
           })
         ])
-      ]) : null
+      ]) : null,
+
+      // Global portal outlet for stacked dialog pop-ups/wizards
+      h(OdooDialogOutlet)
     ]);
   }
 };

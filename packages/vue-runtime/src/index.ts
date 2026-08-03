@@ -5,4 +5,5 @@ export * from './composables/useOdooField.js';
 export * from './composables/useOdooRelationField.js';
 export * from './widgets/index.js';
 export * from './renderers/index.js';
+export * from './components/OdooDialog.js';
 
