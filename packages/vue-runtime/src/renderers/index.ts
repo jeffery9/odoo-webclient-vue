@@ -79,6 +79,7 @@ export * from './ListRenderer.js';
 export * from './CardRenderer.js';
 export * from './QWebRenderer.js';
 export * from './OdooNotebook.js';
+export * from './SearchView.js';
 export * from './complex/GraphRenderer.js';
 export * from './complex/PivotRenderer.js';
 export * from './complex/CalendarRenderer.js';

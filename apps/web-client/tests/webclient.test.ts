@@ -328,22 +328,10 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
     expect(vnode.type).toBe('div');
     expect(vnode.props.class).toContain('o_odoo_control_panel');
 
-    // Verify grid headers & labels exist
-    const gridDiv = vnode.children[1];
-    expect(gridDiv.props.class).toContain('grid');
-    expect(gridDiv.children.length).toBe(2); // 2 search fields: name, user_id
-    expect(gridDiv.children[0].children[0].children).toBe('Name');
-    expect(gridDiv.children[1].children[0].children).toBe('Responsible');
-
-    // Verify Filter button groups
-    const filterDiv = vnode.children[2];
-    expect(filterDiv.children[0].children).toBe('快捷过滤 (Quick Filters)');
-    expect(filterDiv.children[1].type).toBe('el-checkbox-group');
-
-    // Verify GroupBy button groups
-    const groupbyDiv = vnode.children[3];
-    expect(groupbyDiv.children[0].children).toBe('数据分组 (Group By)');
-    expect(groupbyDiv.children[1].type).toBe('el-checkbox-group');
+    // Verify it composes SearchView internally
+    const searchViewVNode = vnode.children[0];
+    expect(searchViewVNode.type).toBeDefined();
+    expect(searchViewVNode.props.arch).toBe(searchArch);
   });
 });
 
