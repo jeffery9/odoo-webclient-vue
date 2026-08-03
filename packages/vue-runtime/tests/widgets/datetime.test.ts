@@ -57,8 +57,9 @@ describe('Datetime Widgets', () => {
     expect(readonlyVnode.children).toBe('2026-08-04');
   });
 
-  test('should render FieldDatetime in edit and readonly modes', () => {
-    const record = new RecordProxy('res.partner', { create_date: '2026-07-26 12:00:00' });
+  test('should render FieldDatetime with UTC to Local Shifting support', () => {
+    // Seed record with standard Odoo UTC string
+    const record = new RecordProxy('res.partner', { create_date: '2026-08-04 15:30:45' });
     const datetimeWidget = componentRegistry.get('datetime') as any;
 
     // 1. Edit Mode
@@ -71,8 +72,13 @@ describe('Datetime Widgets', () => {
     const pickerNode = editVnode.children[0];
     expect(pickerNode.props.type).toBe('datetime');
 
-    // Test bidirectional UTC date-time formatting serializer
-    pickerNode.props['onUpdate:modelValue'](new Date('2026-08-04 15:30:45'));
+    // Extract passed local Date object
+    const localDateValue = pickerNode.props.modelValue as Date;
+    expect(localDateValue).toBeInstanceOf(Date);
+
+    // Test Local -> UTC translation formatting back to Odoo UTC string
+    const testUTCDate = new Date(Date.UTC(2026, 7, 4, 15, 30, 45)); // August is index 7
+    pickerNode.props['onUpdate:modelValue'](testUTCDate);
     expect(record.get('create_date')).toBe('2026-08-04 15:30:45');
 
     // 2. Readonly Mode
@@ -81,6 +87,9 @@ describe('Datetime Widgets', () => {
 
     expect(readonlyVnode.type).toBe('span');
     expect(readonlyVnode.props.class).toBe('o_field_datetime o_readonly');
-    expect(readonlyVnode.children).toBe('2026-08-04 15:30:45');
+    
+    // Readonly display shifts UTC to local timezone string format
+    const expectedLocalDisplay = `${localDateValue.getFullYear()}-${String(localDateValue.getMonth() + 1).padStart(2, '0')}-${String(localDateValue.getDate()).padStart(2, '0')} ${String(localDateValue.getHours()).padStart(2, '0')}:${String(localDateValue.getMinutes()).padStart(2, '0')}:${String(localDateValue.getSeconds()).padStart(2, '0')}`;
+    expect(readonlyVnode.children).toBe(expectedLocalDisplay);
   });
 });

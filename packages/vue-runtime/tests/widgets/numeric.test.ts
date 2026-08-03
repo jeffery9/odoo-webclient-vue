@@ -23,17 +23,44 @@ describe('Numeric Widgets', () => {
     expect(floatVnode.props.type).toBe('number');
   });
 
-  test('should render FieldMonetary number input', () => {
-    const record = new RecordProxy('res.partner', { amount: 1500.5 });
-    
-    const monetWidget = componentRegistry.get('monetary') as any;
-    const monetVnode = monetWidget.setup({ record, name: 'amount', readonly: false }, {})();
-    expect(monetVnode.type).toBe('input');
-    expect(monetVnode.props.type).toBe('number');
+  test('should render FieldMonetary with dynamic Odoo currency mapping', () => {
+    // 1. Setup mock session with currencies metadata
+    const mockSession = {
+      currencies: {
+        3: { symbol: '¥', position: 'before' },
+        1: { symbol: '$', position: 'after' }
+      },
+      userContext: { lang: 'zh_CN' }
+    };
 
+    const record = new RecordProxy('res.partner', { amount: 1500.5, currency_id: [3, 'CNY'] });
+    (record as any).model = {
+      session: mockSession
+    };
+
+    const monetWidget = componentRegistry.get('monetary') as any;
+
+    // 2. Edit Mode (Currency symbol placement: before)
+    const editVnode = monetWidget.setup({ record, name: 'amount', readonly: false }, {})();
+    expect(editVnode.type).toBe('div');
+    expect(editVnode.props.class).toContain('o_field_monetary');
+    
+    // Grid alignment: [¥ badge, input box]
+    const symbolNode = editVnode.children[0];
+    const inputNode = editVnode.children[1];
+    
+    expect(symbolNode.children).toBe('¥');
+    expect(inputNode.type).toBe('input');
+    expect(inputNode.props.value).toBe(1500.5);
+
+    // 3. Readonly Mode (Locale formatted currencies with decimals)
     const readonlyVnode = monetWidget.setup({ record, name: 'amount', readonly: true }, {})();
     expect(readonlyVnode.type).toBe('span');
-    expect(readonlyVnode.children).toBe('1500.5');
+    expect(readonlyVnode.props.class).toContain('o_field_monetary');
+    expect(readonlyVnode.props.class).toContain('o_readonly');
+    
+    // Chinese local format: ¥1,500.50
+    expect(readonlyVnode.children).toBe('¥1,500.50');
   });
 
   test('should render percentage widget correctly with float math conversions', () => {

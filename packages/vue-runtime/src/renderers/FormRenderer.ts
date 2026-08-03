@@ -9,7 +9,8 @@ export const FormRenderer = defineComponent({
   props: {
     arch: { type: Object, required: true },
     record: { type: Object, required: true },
-    fields: { type: Object, default: () => ({}) }
+    fields: { type: Object, default: () => ({}) },
+    readonly: { type: Boolean, default: false }
   },
   setup(props) {
     const actionManager = inject(ACTION_MANAGER_KEY) as any;
@@ -40,7 +41,7 @@ export const FormRenderer = defineComponent({
           return h(widgetComp, {
             record: props.record,
             name,
-            readonly: evaluated.readonly,
+            readonly: props.readonly || evaluated.readonly,
             statusbar_visible: c.attrs?.statusbar_visible || '',
             selection: props.fields?.[name]?.selection || []
           });
@@ -151,7 +152,7 @@ export const FormRenderer = defineComponent({
         const fieldVnode = h(widgetComp, {
           record: props.record,
           name,
-          readonly: evaluated.readonly,
+          readonly: props.readonly || evaluated.readonly,
           required: evaluated.required,
           options: optionsObj,
           relation: node.attrs?.relation,
