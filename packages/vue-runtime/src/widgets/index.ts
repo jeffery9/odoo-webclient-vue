@@ -10,18 +10,16 @@ import { FieldMany2one } from './FieldMany2one.js';
 import { FieldOne2many } from './FieldOne2many.js';
 import { FieldMany2many } from './FieldMany2many.js';
 import { FieldStatusbar } from './FieldStatusbar.js';
-import {
-  FieldUrl,
-  FieldEmail,
-  FieldPhone,
-  FieldBadge,
-  FieldProgressBar,
-  FieldPriority,
-  FieldImage,
-  FieldHandle,
-  FieldTag,
-  FieldAvatar
-} from './widgets.js';
+import { FieldUrl } from './FieldUrl.js';
+import { FieldEmail } from './FieldEmail.js';
+import { FieldPhone } from './FieldPhone.js';
+import { FieldBadge } from './FieldBadge.js';
+import { FieldProgressBar } from './FieldProgressBar.js';
+import { FieldPriority } from './FieldPriority.js';
+import { FieldImage } from './FieldImage.js';
+import { FieldHandle } from './FieldHandle.js';
+import { FieldTag } from './FieldTag.js';
+import { FieldAvatar } from './FieldAvatar.js';
 
 export * from './FieldChar.js';
 export * from './FieldText.js';
@@ -34,7 +32,16 @@ export * from './FieldMany2one.js';
 export * from './FieldOne2many.js';
 export * from './FieldMany2many.js';
 export * from './FieldStatusbar.js';
-export * from './widgets.js';
+export * from './FieldUrl.js';
+export * from './FieldEmail.js';
+export * from './FieldPhone.js';
+export * from './FieldBadge.js';
+export * from './FieldProgressBar.js';
+export * from './FieldPriority.js';
+export * from './FieldImage.js';
+export * from './FieldHandle.js';
+export * from './FieldTag.js';
+export * from './FieldAvatar.js';
 
 export function registerCoreComponents() {
   componentRegistry.add('char', FieldChar);

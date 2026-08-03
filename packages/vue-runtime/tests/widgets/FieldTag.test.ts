@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest';
 import { componentRegistry } from '../../src/registry.js';
-import { FieldTag } from '../../src/widgets/widgets.js';
+import { FieldTag } from '../../src/widgets/FieldTag.js';
 import { RecordProxy } from '@odoo/sdk';
 
 // Headless Element Plus Mock to support Vitest
