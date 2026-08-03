@@ -76,8 +76,19 @@ describe('Odoo Vue Base UI Widgets', () => {
     const vnode = renderFn();
 
     expect(vnode.type).toBe('span');
-    expect(vnode.props.class).toBe('o_field_char o_readonly');
+    expect(vnode.props.class).toBe('o_field_char_readonly text-slate-700');
     expect(vnode.children).toBe('Mitchell Admin');
+  });
+
+  test('should render null for FieldChar when invisible', () => {
+    const record = new RecordProxy('res.partner', { name: 'Mitchell Admin' });
+    (record as any).isInvisible = (name: string) => name === 'name';
+    const widget = componentRegistry.get('char') as any;
+
+    const renderFn = widget.setup({ record, name: 'name', readonly: false }, {});
+    const vnode = renderFn();
+
+    expect(vnode).toBeNull();
   });
 
   test('should render FieldText textarea element', () => {

@@ -2,26 +2,33 @@ import { defineComponent, h, inject, ref, onMounted, onUnmounted, getCurrentInst
 import { ACTION_MANAGER_KEY } from './di.js';
 import { componentRegistry, viewRegistry } from './registry.js';
 import { ListRenderer, CardRenderer } from './renderers.js';
+import { useOdooField } from './composables/useOdooField.js';
 
 export const FieldChar = defineComponent({
   props: {
     record: { type: Object, required: true },
     name: { type: String, required: true },
-    readonly: { type: Boolean, default: false }
+    readonly: { type: Boolean, default: false },
+    options: { type: Object, default: () => ({}) }
   },
   setup(props) {
-    return () => {
-      const val = props.record?.get(props.name);
-      const strVal = val !== null && val !== undefined ? String(val) : '';
+    const { value, isReadonly, isRequired, isInvisible, errors } = useOdooField(props);
 
-      if (props.readonly) {
-        return h('span', { class: 'o_field_char o_readonly' }, strVal);
+    return () => {
+      if (isInvisible.value) {
+        return null;
+      }
+
+      if (isReadonly.value) {
+        return h('span', { class: 'o_field_char_readonly text-slate-700' }, value.value || '');
       }
 
       return h('input', {
         class: 'o_field_char',
-        value: strVal,
-        onInput: (e: any) => props.record?.set(props.name, e.target.value)
+        value: value.value || '',
+        onInput: (e: any) => {
+          value.value = e.target.value;
+        }
       });
     };
   }
