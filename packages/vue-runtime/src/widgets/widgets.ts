@@ -1,4 +1,5 @@
-import { defineComponent, h, ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { defineComponent, h, ref, getCurrentInstance, onMounted, onUnmounted, computed } from 'vue';
+import { ElSelect, ElOption } from 'element-plus';
 
 export const FieldUrl = defineComponent({
   props: {
@@ -220,27 +221,41 @@ export const FieldTag = defineComponent({
     relation: { type: String, default: '' }
   },
   setup(props) {
-    const inputVal = ref('');
-    const showDropdown = ref(false);
-    const containerRef = ref<HTMLElement | null>(null);
+    const isLoading = ref(false);
+    const tagSuggestions = ref<{ id: number; display_name: string }[]>([]);
 
-    const tagSuggestions = ref<string[]>([]);
+    const childRecords = computed(() => {
+      const val = props.record?.get(props.name) || [];
+      return Array.isArray(val) ? val : [];
+    });
 
-    const fetchSuggestions = async () => {
+    const selectedIds = computed(() => {
+      return childRecords.value.map((rec: any) => {
+        return rec?.get ? rec.get('id') : (Array.isArray(rec) ? rec[0] : rec?.id);
+      });
+    });
+
+    const search = async (q: string) => {
       const session = props.record?.model?.session;
       if (session?.rpc) {
+        isLoading.value = true;
         try {
           const relationModel = props.relation || 'res.partner.category';
           const res = await session.rpc({
             model: relationModel,
             method: 'search_read',
-            args: [[], ['name', 'display_name']]
+            args: [[['name', 'ilike', q]], ['name', 'display_name']]
           });
           if (Array.isArray(res)) {
-            tagSuggestions.value = res.map((r: any) => r.display_name || r.name || '');
+            tagSuggestions.value = res.map((r: any) => ({
+              id: r.id,
+              display_name: r.display_name || r.name || ''
+            }));
           }
         } catch (e) {
           // fallback silently for standalone runs
+        } finally {
+          isLoading.value = false;
         }
       }
     };
@@ -250,81 +265,16 @@ export const FieldTag = defineComponent({
       return TAG_COLORS[id % TAG_COLORS.length];
     };
 
-    const removeTag = (recToRemove: any, e: Event) => {
-      e.stopPropagation();
-      const val = props.record?.get(props.name) || [];
-      const childRecords = Array.isArray(val) ? val : [];
-      const updated = childRecords.filter((rec: any) => {
-        const thisId = rec?.get ? rec.get('id') : (Array.isArray(rec) ? rec[0] : rec?.id);
-        const removeId = recToRemove?.get ? recToRemove.get('id') : (Array.isArray(recToRemove) ? recToRemove[0] : recToRemove?.id);
-        return thisId !== removeId;
-      });
-      props.record?.set(props.name, updated);
-    };
-
-    const addTag = (tagName: string) => {
-      const val = props.record?.get(props.name) || [];
-      const childRecords = Array.isArray(val) ? val : [];
-      
-      const exists = childRecords.some((rec: any) => {
-        const nameVal = rec?.get 
-          ? rec.get('display_name') || rec.get('name') 
-          : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
-        return String(nameVal).toLowerCase() === tagName.toLowerCase();
-      });
-      if (exists) return;
-
-      const newTag = {
-        id: Math.floor(Math.random() * 100000) + 1,
-        display_name: tagName,
-        name: tagName
-      };
-
-      props.record?.set(props.name, [...childRecords, newTag]);
-    };
-
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && inputVal.value.trim()) {
-        e.preventDefault();
-        addTag(inputVal.value.trim());
-        inputVal.value = '';
-        showDropdown.value = false;
-      }
-    };
-
-    const selectSuggestion = (sug: string, e: Event) => {
-      e.stopPropagation();
-      addTag(sug);
-      inputVal.value = '';
-      showDropdown.value = false;
-    };
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.value && !containerRef.value.contains(e.target as Node)) {
-        showDropdown.value = false;
-      }
-    };
-
-    const hasInstance = getCurrentInstance();
-    if (hasInstance) {
-      onMounted(() => {
-        window.addEventListener('click', handleClickOutside);
-        fetchSuggestions();
-      });
-      onUnmounted(() => {
-        window.removeEventListener('click', handleClickOutside);
-      });
-    }
+    onMounted(() => {
+      search('');
+    });
 
     return () => {
-      const val = props.record?.get(props.name) || [];
-      const childRecords = Array.isArray(val) ? val : [];
-
       if (props.readonly) {
         return h('div', {
           class: 'o_field_tags o_readonly',
           style: 'display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0;'
-        }, childRecords.map((rec: any) => {
+        }, childRecords.value.map((rec: any) => {
           const nameVal = rec?.get 
             ? rec.get('display_name') || rec.get('name') 
             : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
@@ -337,79 +287,54 @@ export const FieldTag = defineComponent({
       }
 
       return h('div', {
-        ref: containerRef,
         class: 'o_field_tags o_field_widget',
-        style: 'position: relative; display: flex; flex-direction: column; width: 100%;'
+        style: {
+          '--el-color-primary': '#714B67',
+          '--el-color-primary-light-9': '#f3eff2',
+          '--el-border-radius-base': '6px',
+          width: '100%',
+          display: 'inline-block'
+        }
       }, [
-        h('div', {
-          class: 'o_tag_container',
-          style: 'display: flex; flex-wrap: wrap; gap: 4px; border: 1px solid #ccc; padding: 4px; border-radius: 4px; background: white; min-height: 34px; align-items: center; cursor: text;',
-          onClick: () => { showDropdown.value = true; }
-        }, [
-          childRecords.map((rec: any) => {
-            const nameVal = rec?.get 
-              ? rec.get('display_name') || rec.get('name') 
-              : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
-            const color = getColor(rec);
-            return h('span', {
-              class: 'o_tag_pill',
-              style: `background: ${color.bg}; color: ${color.text}; border: 1px solid ${color.border}; padding: 2px 6px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;`
-            }, [
-              h('span', null, String(nameVal)),
-              h('span', {
-                class: 'o_tag_close_btn',
-                style: 'cursor: pointer; font-size: 10px; opacity: 0.6; hover: opacity: 1; font-weight: bold; padding: 0 2px;',
-                onClick: (e: Event) => removeTag(rec, e)
-              }, '×')
-            ]);
-          }),
-
-          h('input', {
-            type: 'text',
-            class: 'o_tag_input',
-            style: 'border: none; outline: none; flex-grow: 1; font-size: 13px; min-width: 60px; padding: 2px 4px; background: transparent;',
-            placeholder: childRecords.length === 0 ? 'Search or type tag...' : '',
-            value: inputVal.value,
-            onInput: (e: any) => {
-              inputVal.value = e.target.value;
-              showDropdown.value = true;
-            },
-            onKeydown: handleKeydown,
-            onFocus: () => { showDropdown.value = true; }
-          })
-        ]),
-
-        showDropdown.value ? h('div', {
-          class: 'o_tag_dropdown',
-          style: 'position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 1000; max-height: 180px; overflow-y: auto;'
-        }, [
-          tagSuggestions.value
-            .filter((s: string) => {
-              const alreadySelected = childRecords.some((rec: any) => {
-                const nameVal = rec?.get 
-                  ? rec.get('display_name') || rec.get('name') 
-                  : (Array.isArray(rec) ? rec[1] : rec?.display_name || rec?.name || String(rec));
-                return String(nameVal).toLowerCase() === s.toLowerCase();
+        h(ElSelect, {
+          modelValue: selectedIds.value,
+          multiple: true,
+          filterable: true,
+          remote: true,
+          allowCreate: true,
+          defaultFirstOption: true,
+          placeholder: childRecords.value.length === 0 ? 'Search or create tag...' : '',
+          loading: isLoading.value,
+          remoteMethod: search,
+          style: { width: '100%' },
+          class: 'o_field_many2many_tags_select',
+          'onUpdate:modelValue': (newIds: any[]) => {
+            const updated = newIds.map((idVal) => {
+              if (typeof idVal === 'string') {
+                // Created on the fly!
+                return {
+                  id: Math.floor(Math.random() * 100000) + 1,
+                  display_name: idVal,
+                  name: idVal
+                };
+              }
+              const found = childRecords.value.find((rec: any) => {
+                const rId = rec?.get ? rec.get('id') : (Array.isArray(rec) ? rec[0] : rec?.id);
+                return rId === idVal;
               });
-              const matchesKeyword = s.toLowerCase().includes(inputVal.value.toLowerCase());
-              return !alreadySelected && matchesKeyword;
-            })
-            .map((sug: string) => h('div', {
-              class: 'o_tag_dropdown_item',
-              style: 'padding: 8px 12px; font-size: 13px; cursor: pointer; color: #334155; hover: background: #f1f5f9; display: flex; align-items: center;',
-              onClick: (e: Event) => selectSuggestion(sug, e)
-            }, sug)),
-
-          inputVal.value.trim() && !tagSuggestions.value.some((s: string) => s.toLowerCase() === inputVal.value.trim().toLowerCase()) ? h('div', {
-            class: 'o_tag_dropdown_item_create',
-            style: 'padding: 8px 12px; font-size: 13px; cursor: pointer; color: #714B67; font-weight: 500; background: #faf5f8; border-top: 1px solid #f3e8ff;',
-            onClick: (e: Event) => {
-              addTag(inputVal.value.trim());
-              inputVal.value = '';
-              showDropdown.value = false;
-            }
-          }, `Create "${inputVal.value.trim()}"...`) : null
-        ]) : null
+              if (found) return found;
+              const suggestion = tagSuggestions.value.find(sug => sug.id === idVal);
+              return suggestion || { id: idVal, display_name: String(idVal), name: String(idVal) };
+            });
+            props.record?.set(props.name, updated);
+          }
+        }, () => [
+          ...tagSuggestions.value.map(s => h(ElOption, {
+            key: s.id,
+            label: s.display_name,
+            value: s.id
+          }))
+        ])
       ]);
     };
   }
