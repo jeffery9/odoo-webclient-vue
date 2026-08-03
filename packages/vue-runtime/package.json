@@ -21,6 +21,7 @@
     "@tiptap/starter-kit": "^3.29.2",
     "@tiptap/vue-3": "^3.29.2",
     "echarts": "^6.1.0",
+    "element-plus": "^2.14.3",
     "vue": "^3.4.35"
   }
 }
