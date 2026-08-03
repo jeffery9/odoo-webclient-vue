@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { SearchView, SearchPanelRenderer } from '../../src/renderers/SearchView.js';
+import { SearchView, SearchPanelRenderer, getPrimaryRange, getComparisonRange } from '../../src/renderers/SearchView.js';
 
 describe('SearchView and SearchPanelRenderer', () => {
   const searchArch = {
@@ -63,5 +63,22 @@ describe('SearchView and SearchPanelRenderer', () => {
     const treeContainer = vnode.children[1];
     expect(treeContainer.children[0].children).toBe('Category');
     expect(treeContainer.children[1].type).toBe('el-tree');
+  });
+
+  test('should compute correct primary and comparison date ranges for YoY and MoM', () => {
+    const [thisYearStart, thisYearEnd] = getPrimaryRange('this_year', null);
+    const currentYear = new Date().getFullYear();
+    expect(thisYearStart).toBe(`${currentYear}-01-01`);
+    expect(thisYearEnd).toBe(`${currentYear}-12-31`);
+
+    // Test YoY (-1 year offset)
+    const [yoyStart, yoyEnd] = getComparisonRange('2026-08-01', '2026-08-31', 'yoy');
+    expect(yoyStart).toBe('2025-08-01');
+    expect(yoyEnd).toBe('2025-08-31');
+
+    // Test MoM (length of period offset, 31 days)
+    const [momStart, momEnd] = getComparisonRange('2026-08-01', '2026-08-31', 'mom');
+    expect(momStart).toBe('2026-07-01');
+    expect(momEnd).toBe('2026-07-31');
   });
 });
