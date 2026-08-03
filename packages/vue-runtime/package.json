@@ -17,6 +17,9 @@
   },
   "dependencies": {
     "@odoo/sdk": "^0.1.0",
+    "@tiptap/core": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2",
+    "@tiptap/vue-3": "^3.29.2",
     "vue": "^3.4.35"
   }
 }
