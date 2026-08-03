@@ -1,5 +1,7 @@
 import { defineComponent, h, ref, watch, computed } from 'vue';
 import { useOdooField } from '../composables/useOdooField.js';
+import { useEditor, EditorContent } from '@tiptap/vue-3';
+import { StarterKit } from '@tiptap/starter-kit';
 
 export const FieldHtml = defineComponent({
   props: {
@@ -11,12 +13,26 @@ export const FieldHtml = defineComponent({
   setup(props) {
     const { value, isReadonly, isInvisible } = useOdooField(props);
     const activeTab = ref<'edit' | 'preview'>('edit');
-    const editorRef = ref<HTMLDivElement | null>(null);
+
+    const editor = useEditor({
+      content: value.value || '',
+      extensions: [
+        StarterKit,
+      ],
+      editable: !isReadonly.value,
+      onUpdate: ({ editor: currentEditor }) => {
+        value.value = currentEditor.getHTML();
+      }
+    });
 
     watch(() => value.value, (newVal) => {
-      if (editorRef.value && editorRef.value.innerHTML !== newVal) {
-        editorRef.value.innerHTML = newVal || '';
+      if (editor.value && editor.value.getHTML() !== newVal) {
+        editor.value.commands.setContent(newVal || '');
       }
+    });
+
+    watch(() => isReadonly.value, (readonly) => {
+      editor.value?.setEditable(!readonly);
     });
 
     const fields = computed(() => props.record?.model?.fields || {});
@@ -24,33 +40,7 @@ export const FieldHtml = defineComponent({
     const handleInsertPlaceholder = (fieldName: string) => {
       if (!fieldName) return;
       const placeholder = `\${object.${fieldName}}`;
-      
-      if (editorRef.value) {
-        editorRef.value.focus();
-        let inserted = false;
-        try {
-          const sel = window.getSelection();
-          if (sel && sel.rangeCount > 0) {
-            const range = sel.getRangeAt(0);
-            if (editorRef.value.contains(range.commonAncestorContainer)) {
-              range.deleteContents();
-              const node = document.createTextNode(placeholder);
-              range.insertNode(node);
-              range.setStartAfter(node);
-              range.setEndAfter(node);
-              sel.removeAllRanges();
-              sel.addRange(range);
-              inserted = true;
-            }
-          }
-        } catch (err) {}
-        if (!inserted) {
-          editorRef.value.innerHTML = (editorRef.value.innerHTML || '') + placeholder;
-        }
-        value.value = editorRef.value.innerHTML;
-      } else {
-        value.value = (value.value || '') + placeholder;
-      }
+      editor.value?.commands.insertContent(placeholder);
     };
 
     const compiledPreview = computed(() => {
@@ -71,7 +61,24 @@ export const FieldHtml = defineComponent({
         return null;
       }
 
-      const strVal = value.value !== null && value.value !== undefined ? String(value.value) : '';
+      // Formatting Toolbar Button Helper
+      const renderToolbarBtn = (label: string, action: () => void, isActive: boolean) => {
+        return h('button', {
+          type: 'button',
+          onClick: action,
+          style: {
+            padding: '4px 8px',
+            borderRadius: '4px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: isActive ? '#714B67' : '#ffffff',
+            color: isActive ? '#ffffff' : '#475569',
+            cursor: 'pointer',
+            fontWeight: '600',
+            fontSize: '11px',
+            transition: 'all 0.15s ease'
+          }
+        }, label);
+      };
 
       return h('div', {
         class: 'o_field_html o_template_editor_container',
@@ -152,37 +159,67 @@ export const FieldHtml = defineComponent({
           ]) : null
         ]),
 
+        // Render Toolbar only in edit tab and edit mode
+        activeTab.value === 'edit' && !isReadonly.value && editor.value
+          ? h('div', {
+              class: 'o_template_editor_toolbar',
+              style: {
+                display: 'flex',
+                gap: '4px',
+                paddingBottom: '4px',
+                borderBottom: '1px dashed #e2e8f0',
+                flexWrap: 'wrap'
+              }
+            }, [
+              renderToolbarBtn('B', () => editor.value?.chain().focus().toggleBold().run(), !!editor.value?.isActive('bold')),
+              renderToolbarBtn('I', () => editor.value?.chain().focus().toggleItalic().run(), !!editor.value?.isActive('italic')),
+              renderToolbarBtn('S', () => editor.value?.chain().focus().toggleStrike().run(), !!editor.value?.isActive('strike')),
+              renderToolbarBtn('Code', () => editor.value?.chain().focus().toggleCode().run(), !!editor.value?.isActive('code')),
+              renderToolbarBtn('• List', () => editor.value?.chain().focus().toggleBulletList().run(), !!editor.value?.isActive('bulletList')),
+              renderToolbarBtn('1. List', () => editor.value?.chain().focus().toggleOrderedList().run(), !!editor.value?.isActive('orderedList')),
+              h('button', {
+                type: 'button',
+                onClick: () => editor.value?.chain().focus().clearContent().run(),
+                style: {
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '11px',
+                  marginLeft: 'auto'
+                }
+              }, 'Clear')
+            ])
+          : null,
+
         activeTab.value === 'edit'
           ? h('div', {
-              ref: (el: any) => {
-                if (el) {
-                  editorRef.value = el;
-                  if (el.innerHTML !== strVal) {
-                    el.innerHTML = strVal;
-                  }
-                }
-              },
-              class: 'o_field_html o_template_editor_content',
-              contenteditable: !isReadonly.value,
+              class: 'o_field_html o_template_editor_content_wrapper',
               style: {
                 border: '1px solid #cbd5e1',
-                padding: '12px',
-                minHeight: '120px',
+                padding: '4px',
                 borderRadius: '4px',
                 backgroundColor: isReadonly.value ? '#f8fafc' : '#ffffff',
-                color: '#334155',
-                outline: 'none',
-                fontFamily: 'monospace, Courier New, monospace',
-                fontSize: '14px',
-                lineHeight: '1.5'
-              },
-              onInput: (e: any) => {
-                value.value = e.target.innerHTML;
-              },
-              onBlur: (e: any) => {
-                value.value = e.target.innerHTML;
+                minHeight: '120px'
               }
-            })
+            }, [
+              h(EditorContent, {
+                editor: editor.value,
+                class: 'o_template_editor_content tiptap_canvas',
+                style: {
+                  outline: 'none',
+                  minHeight: '112px',
+                  padding: '8px',
+                  color: '#334155',
+                  fontFamily: 'monospace, Courier New, monospace',
+                  fontSize: '14px',
+                  lineHeight: '1.5'
+                }
+              })
+            ])
           : h('div', {
               class: 'o_template_editor_preview',
               style: {
@@ -199,6 +236,6 @@ export const FieldHtml = defineComponent({
               innerHTML: compiledPreview.value
             })
       ]);
-    }
+    };
   }
 });
