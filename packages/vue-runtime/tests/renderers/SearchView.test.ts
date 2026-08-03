@@ -12,7 +12,7 @@ describe('SearchView and SearchPanelRenderer', () => {
       {
         tag: 'searchpanel',
         children: [
-          { tag: 'field', attrs: { name: 'category_id', string: 'Category' } }
+          { tag: 'field', attrs: { name: 'category_id', string: 'Category', icon: 'fa-users' } }
         ]
       }
     ]
@@ -62,7 +62,16 @@ describe('SearchView and SearchPanelRenderer', () => {
 
     const treeContainer = vnode.children[1];
     expect(treeContainer.children[0].children).toBe('Category');
-    expect(treeContainer.children[1].type).toBe('el-tree');
+    
+    const treeProps = treeContainer.children[1].props;
+    expect(treeProps.renderContent).toBeDefined();
+
+    // Verify dynamic Font Awesome node rendering
+    const h_mock = (tag: string, props: any, children: any) => ({ tag, props, children });
+    const renderedNode = treeProps.renderContent(h_mock, { node: { label: 'VIP' } });
+    expect(renderedNode.tag).toBe('span');
+    expect(renderedNode.children[0].props.class).toBe('fa fa-users');
+    expect(renderedNode.children[1].children).toBe('VIP');
   });
 
   test('should compute correct primary and comparison date ranges for YoY and MoM', () => {

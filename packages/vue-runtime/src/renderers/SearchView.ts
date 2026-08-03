@@ -524,6 +524,13 @@ export const SearchPanelRenderer = defineComponent({
                 label: 'label',
                 children: 'children'
               },
+              renderContent: (h_render: any, { node }: any) => {
+                const iconClass = f.attrs.icon || 'fa-folder';
+                return h_render('span', { style: 'display: flex; align-items: center; gap: 6px;' }, [
+                  h_render('i', { class: `fa ${iconClass}`, style: 'color: #94a3b8; font-size: 12px;' }),
+                  h_render('span', null, node.label)
+                ]);
+              },
               onCheck: (node: any, checkState: any) => {
                 handleNodeCheck(name, checkState.checkedKeys);
               },
