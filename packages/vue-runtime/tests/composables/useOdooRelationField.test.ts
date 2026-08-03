@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { useOdooRelationField } from './useOdooRelationField.js';
+import { useOdooRelationField } from '../../src/composables/useOdooRelationField.js';
 
 describe('useOdooRelationField Composable', () => {
     it('performs debounced asynchronous name_search', async () => {

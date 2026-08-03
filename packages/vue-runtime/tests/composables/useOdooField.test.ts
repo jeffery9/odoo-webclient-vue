@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { useOdooField } from './useOdooField.js';
+import { useOdooField } from '../../src/composables/useOdooField.js';
 
 describe('useOdooField Composable', () => {
     it('should correctly bind values and evaluate modifiers dynamically', () => {

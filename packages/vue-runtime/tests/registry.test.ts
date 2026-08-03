@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'vitest';
-import { Registry, componentRegistry } from './registry.js';
-import { ACTION_MANAGER_KEY, ROUTER_KEY, SESSION_KEY } from './di.js';
+import { Registry, componentRegistry } from '../src/registry.js';
+import { ACTION_MANAGER_KEY, ROUTER_KEY, SESSION_KEY } from '../src/di.js';
 import { provide, inject, defineComponent, createApp } from 'vue';
 import { ActionManager } from '@odoo/sdk';
-import { registerCoreComponents } from './widgets/index.js';
+import { registerCoreComponents } from '../src/widgets/index.js';
 
 describe('Odoo Vue Component Registry & DI Bus', () => {
   test('should support registering core components dynamically', () => {
