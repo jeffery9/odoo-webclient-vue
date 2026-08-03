@@ -20,6 +20,7 @@ import { FieldImage } from './FieldImage.js';
 import { FieldHandle } from './FieldHandle.js';
 import { FieldTag } from './FieldTag.js';
 import { FieldAvatar } from './FieldAvatar.js';
+import { FieldIcon } from './FieldIcon.js';
 
 export * from './FieldChar.js';
 export * from './FieldText.js';
@@ -42,6 +43,7 @@ export * from './FieldImage.js';
 export * from './FieldHandle.js';
 export * from './FieldTag.js';
 export * from './FieldAvatar.js';
+export * from './FieldIcon.js';
 
 export function registerCoreComponents() {
   componentRegistry.add('char', FieldChar);
@@ -70,4 +72,6 @@ export function registerCoreComponents() {
   componentRegistry.add('many2many_tags', FieldTag);
   componentRegistry.add('percentage', FieldPercentage);
   componentRegistry.add('statusbar', FieldStatusbar);
+  componentRegistry.add('font_awesome', FieldIcon);
+  componentRegistry.add('icon', FieldIcon);
 }

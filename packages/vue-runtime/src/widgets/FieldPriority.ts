@@ -13,17 +13,18 @@ export const FieldPriority = defineComponent({
 
       const stars = Array.from({ length: 5 }, (_, i) => {
         const active = i < rating;
-        return h('span', {
-          style: `cursor: ${props.readonly ? 'default' : 'pointer'}; font-size: 16px; color: ${active ? '#f59e0b' : '#cbd5e1'}; margin-right: 2px;`,
+        return h('i', {
+          class: active ? 'fa fa-star' : 'fa fa-star-o',
+          style: `cursor: ${props.readonly ? 'default' : 'pointer'}; font-size: 16px; color: ${active ? '#f59e0b' : '#cbd5e1'}; margin-right: 4px;`,
           onClick: () => {
             if (!props.readonly) {
               props.record?.set(props.name, i + 1);
             }
           }
-        }, active ? '★' : '☆');
+        });
       });
 
-      return h('div', { class: 'o_priority' }, stars);
+      return h('div', { class: 'o_priority flex items-center' }, stars);
     };
   }
 });
