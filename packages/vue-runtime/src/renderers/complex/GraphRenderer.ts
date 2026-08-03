@@ -89,9 +89,9 @@ export const GraphRenderer = defineComponent({
           h('svg', { width, height }, [
             ...gridLines,
             h('path', { d: dPath, fill: 'none', stroke: '#714B67', strokeWidth: '3' }),
-            points.map((p) => h('circle', { cx: p.x, cy: p.y, r: '5', fill: '#714B67', stroke: 'white', strokeWidth: '2' })),
-            points.map((p) => h('text', { x: p.x, y: height - 15, textAnchor: 'middle', fontSize: '11', fill: '#64748b' }, p.label)),
-            points.map((p) => h('text', { x: p.x, y: p.y - 10, textAnchor: 'middle', fontSize: '11', fontWeight: 'bold', fill: '#1e293b' }, p.val))
+            ...points.map((p) => h('circle', { cx: p.x, cy: p.y, r: '5', fill: '#714B67', stroke: 'white', strokeWidth: '2' })),
+            ...points.map((p) => h('text', { x: p.x, y: height - 15, textAnchor: 'middle', fontSize: '11', fill: '#64748b' }, p.label)),
+            ...points.map((p) => h('text', { x: p.x, y: p.y - 10, textAnchor: 'middle', fontSize: '11', fontWeight: 'bold', fill: '#1e293b' }, p.val))
           ])
         ]);
       }

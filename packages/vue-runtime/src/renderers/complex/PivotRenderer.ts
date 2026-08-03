@@ -62,19 +62,19 @@ export const PivotRenderer = defineComponent({
           h('thead', null, [
             h('tr', { style: 'background: #f8fafc; border-bottom: 2px solid #e2e8f0;' }, [
               h('th', { style: 'padding: 12px; font-weight: 600; color: #475569;' }, rowFieldName.toUpperCase()),
-              colArray.map(col => h('th', { style: 'padding: 12px; font-weight: 600; color: #475569;' }, col)),
+              ...colArray.map(col => h('th', { style: 'padding: 12px; font-weight: 600; color: #475569;' }, col)),
               h('th', { style: 'padding: 12px; font-weight: 600; color: #475569; background: #f1f5f9;' }, 'Total')
             ])
           ]),
           h('tbody', null, [
-            rowArray.map((row, rIdx) => h('tr', { style: `border-bottom: 1px solid #f1f5f9; background: ${rIdx % 2 === 0 ? 'white' : '#f8fafc'};` }, [
+            ...rowArray.map((row, rIdx) => h('tr', { style: `border-bottom: 1px solid #f1f5f9; background: ${rIdx % 2 === 0 ? 'white' : '#f8fafc'};` }, [
               h('td', { style: 'padding: 12px; font-weight: 500; color: #1e293b;' }, row),
-              colArray.map(col => h('td', { style: 'padding: 12px; color: #334155;' }, cellValues[`${row}::${col}`] || '-')),
+              ...colArray.map(col => h('td', { style: 'padding: 12px; color: #334155;' }, cellValues[`${row}::${col}`] || '-')),
               h('td', { style: 'padding: 12px; font-weight: 600; color: #1e293b; background: #f8fafc;' }, rowTotals[row])
             ])),
             h('tr', { style: 'background: #f1f5f9; border-top: 2px solid #e2e8f0; font-weight: 600;' }, [
               h('td', { style: 'padding: 12px; color: #1e293b;' }, 'Total'),
-              colArray.map(col => h('td', { style: 'padding: 12px; color: #1e293b;' }, colTotals[col])),
+              ...colArray.map(col => h('td', { style: 'padding: 12px; color: #1e293b;' }, colTotals[col])),
               h('td', { style: 'padding: 12px; color: #714B67;' }, absoluteTotal)
             ])
           ])

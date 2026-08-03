@@ -1,55 +1,12 @@
 import { describe, test, expect, vi } from 'vitest';
-import { h, defineComponent } from 'vue';
-import { ListRenderer, FormRenderer, QWebRenderer, resolveFieldWidget } from './renderers/index.js';
-import { componentRegistry } from './registry.js';
-import { FieldChar } from './widgets/index.js';
+import { FormRenderer, resolveFieldWidget } from '../../src/renderers/index.js';
+import { componentRegistry } from '../../src/registry.js';
+import { FieldChar } from '../../src/widgets/index.js';
 import { RecordProxy } from '@odoo/sdk';
 
-describe('Odoo Vue View Renderers', () => {
+describe('FormRenderer', () => {
   // Register widget char for renderer resolving tests
   componentRegistry.add('char', FieldChar);
-
-  const listArch = {
-    type: 'list',
-    children: [
-      { tag: 'field', attrs: { name: 'name', string: 'Product Name' } },
-      { tag: 'field', attrs: { name: 'price', string: 'Unit Price' } }
-    ]
-  };
-
-  const records = [
-    new RecordProxy('product.product', { id: 1, name: 'Screwdriver', price: 15.0 }),
-    new RecordProxy('product.product', { id: 2, name: 'Hammer', price: 25.0 })
-  ];
-
-  test('should compile ListRenderer arch and records into dynamic VNode table trees', () => {
-    // Instantiate component and capture render output
-    const listInstance = ListRenderer as any;
-    
-    // Call the setup/render manually to inspect returned VNode structures
-    const renderFn = listInstance.setup({ arch: listArch, records }, {});
-    const vnode = renderFn();
-
-    expect(vnode.type).toBe('table');
-    
-    // table -> thead -> tr -> th list
-    const thead = vnode.children[0];
-    expect(thead.type).toBe('thead');
-    const headerCols = thead.children[0].children; // array of th
-    expect(headerCols[0].children).toBe('Product Name');
-    expect(headerCols[1].children).toBe('Unit Price');
-
-    // table -> tbody -> tr list
-    const tbody = vnode.children[1];
-    expect(tbody.type).toBe('tbody');
-    expect(tbody.children.length).toBe(2); // 2 records
-    
-    const firstRowFirstCellSpan = tbody.children[0].children[0].children[0] || tbody.children[0].children[0].children;
-    expect(firstRowFirstCellSpan.children).toBe('Screwdriver');
-
-    const secondRowFirstCellSpan = tbody.children[1].children[0].children[0] || tbody.children[1].children[0].children;
-    expect(secondRowFirstCellSpan.children).toBe('Hammer');
-  });
 
   test('should compile FormRenderer arch and single record into styled sheet layouts', () => {
     const formArch = {
@@ -199,120 +156,20 @@ describe('Odoo Vue View Renderers', () => {
   });
 
   test('should enforce widget-field compatibility and auto-fallback to native type on error', () => {
-    // Import resolveFieldWidget
     const record = new RecordProxy('res.partner', {
       name: 'John Doe', // char field
       rating: 3,        // integer field
     });
 
-    // 1. Compatible cases
-    // progressbar on integer is compatible
+    // Compatible cases
     expect(resolveFieldWidget('rating', record, { widget: 'progressbar' })).toBe('progressbar');
 
-    // 2. Incompatible cases
-    // progressbar on char field is incompatible! Should fallback to field's native type ('char')
+    // Incompatible cases
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const resolved = resolveFieldWidget('name', record, { widget: 'progressbar' });
     
     expect(resolved).toBe('char');
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
-  });
-});
-
-describe('Odoo QWeb Renderer Integration', () => {
-  test('should render basic elements and evaluate conditional t-if', () => {
-    const arch = {
-      tag: 'div',
-      attrs: { class: 'container' },
-      children: [
-        {
-          tag: 't',
-          type: 'if',
-          expr: "state == 'done'",
-          children: [
-            { tag: 'span', attrs: { class: 'success-badge' } }
-          ]
-        },
-        {
-          tag: 't',
-          type: 'if',
-          expr: "state == 'draft'",
-          children: [
-            { tag: 'span', attrs: { class: 'draft-badge' } }
-          ]
-        }
-      ]
-    };
-
-    const context = { state: 'done' };
-    const qwebInstance = QWebRenderer as any;
-    const renderFn = qwebInstance.setup({ arch, context }, {});
-    const vnode = renderFn();
-
-    // vnode -> outer div class='o_qweb_view' -> inner div class='container'
-    const container = vnode.children[0];
-    expect(container.type).toBe('div');
-    expect(container.props.class).toBe('container');
-
-    // Only state == 'done' is rendered
-    expect(container.children.length).toBe(2);
-    // index 0 contains the children of 'done' branch spans
-    const doneBranch = container.children[0];
-    expect(doneBranch[0].type).toBe('span');
-    expect(doneBranch[0].props.class).toBe('success-badge');
-
-    // index 1 is draft branch which is null/empty
-    expect(container.children[1]).toBeNull();
-  });
-
-  test('should render dynamic loops and text interpolation using t-foreach and t-esc', () => {
-    const arch = {
-      tag: 'ul',
-      attrs: { class: 'items-list' },
-      children: [
-        {
-          tag: 't',
-          type: 'foreach',
-          expr: 'items',
-          as: 'row',
-          children: [
-            {
-              tag: 'li',
-              attrs: { class: 'item' },
-              children: [
-                {
-                  tag: 'span',
-                  attrs: { 't-esc': 'row' }
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-
-    const context = { items: ['Apples', 'Bananas', 'Cherries'] };
-    const qwebInstance = QWebRenderer as any;
-    const renderFn = qwebInstance.setup({ arch, context }, {});
-    const vnode = renderFn();
-
-    const list = vnode.children[0];
-    expect(list.type).toBe('ul');
-
-    const loopOutput = list.children[0]; // array of evaluated items
-    expect(loopOutput.length).toBe(3);
-
-    // Apple row
-    const appleRow = loopOutput[0][0]; // nested due to child array
-    expect(appleRow.type).toBe('li');
-    expect(appleRow.children[0].type).toBe('span');
-    expect(appleRow.children[0].children).toBe('Apples');
-
-    // Banana row
-    const bananaRow = loopOutput[1][0];
-    expect(bananaRow.type).toBe('li');
-    expect(bananaRow.children[0].type).toBe('span');
-    expect(bananaRow.children[0].children).toBe('Bananas');
   });
 });
