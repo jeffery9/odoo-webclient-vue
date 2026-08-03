@@ -1,5 +1,5 @@
 import { defineComponent, h } from 'vue';
-import { ListRenderer, CardRenderer } from '../renderers.js';
+import { ListRenderer, CardRenderer } from '../renderers/index.js';
 import { viewRegistry } from '../registry.js';
 
 export const FieldOne2many = defineComponent({

@@ -1,8 +1,8 @@
 import { describe, test, expect, vi } from 'vitest';
 import { h, defineComponent } from 'vue';
-import { ListRenderer, FormRenderer, QWebRenderer, resolveFieldWidget } from './renderers.js';
+import { ListRenderer, FormRenderer, QWebRenderer, resolveFieldWidget } from './renderers/index.js';
 import { componentRegistry } from './registry.js';
-import { FieldChar } from './widgets.js';
+import { FieldChar } from './widgets/index.js';
 import { RecordProxy } from '@odoo/sdk';
 
 describe('Odoo Vue View Renderers', () => {

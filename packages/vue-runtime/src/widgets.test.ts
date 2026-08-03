@@ -26,9 +26,9 @@ import {
   FieldTag,
   FieldAvatar,
   FieldPercentage
-} from './widgets.js';
+} from './widgets/index.js';
 import { RecordProxy } from '@odoo/sdk';
-import { ListRenderer, CardRenderer, resolveFieldWidget, FormRenderer } from './renderers.js';
+import { ListRenderer, CardRenderer, resolveFieldWidget, FormRenderer } from './renderers/index.js';
 
 describe('Odoo Vue Base UI Widgets', () => {
   // Populate components in registry for rendering tests
