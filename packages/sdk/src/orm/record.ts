@@ -101,4 +101,13 @@ export class RecordProxy {
       this._changes = {};
     }
   }
+
+  toRawJSON(): Record<string, any> {
+    const res: Record<string, any> = {};
+    const keys = new Set([...Object.keys(this._data), ...Object.keys(this._changes)]);
+    for (const key of keys) {
+      res[key] = this.get(key);
+    }
+    return res;
+  }
 }
