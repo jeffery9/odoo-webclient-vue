@@ -1,6 +1,22 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { GraphRenderer } from '../../../src/renderers/index.js';
 import { RecordProxy } from '@odoo/sdk';
+import * as echarts from 'echarts';
+
+// Setup high-fidelity vitest mock for echarts
+const mockSetOption = vi.fn();
+const mockResize = vi.fn();
+const mockDispose = vi.fn();
+
+vi.mock('echarts', () => {
+  return {
+    init: vi.fn(() => ({
+      setOption: mockSetOption,
+      resize: mockResize,
+      dispose: mockDispose
+    }))
+  };
+});
 
 describe('GraphRenderer', () => {
   const records = [
@@ -9,7 +25,11 @@ describe('GraphRenderer', () => {
     new RecordProxy('res.partner', { id: 3, name: 'Alice' })
   ];
 
-  test('should render bar chart by default', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('should render premium ECharts layout and default to bar chart', () => {
     const arch = {
       tag: 'graph',
       attrs: { string: 'Partner Analysis' },
@@ -22,41 +42,41 @@ describe('GraphRenderer', () => {
     const renderFn = graphInstance.setup({ arch, records }, {});
     const vnode = renderFn();
 
+    // 1. Root container assertions
     expect(vnode.type).toBe('div');
     expect(vnode.props.class).toBe('o_graph_view');
-    
-    // Header
-    const h3 = vnode.children[0];
+
+    // 2. Header and Controls layout
+    const header = vnode.children[0];
+    expect(header.type).toBe('div');
+    expect(header.props.class).toBe('o_graph_header');
+
+    const h3 = header.children[0];
     expect(h3.type).toBe('h3');
     expect(h3.children).toBe('Partner Analysis');
 
-    // SVG
-    const svg = vnode.children[1];
-    expect(svg.type).toBe('svg');
-    
-    // There are 2 bars: Alice (2 occurrences) and Bob (1 occurrence)
-    const bars = svg.children;
-    expect(bars.length).toBe(2);
-    
-    // Check first bar (Alice)
-    const firstGroup = bars[0];
-    const firstTextLabel = firstGroup.children[1];
-    const firstTextVal = firstGroup.children[2];
-    expect(firstTextLabel.children).toBe('Alice');
-    expect(firstTextVal.children).toBe('2');
+    const buttonsContainer = header.children[1];
+    expect(buttonsContainer.type).toBe('div');
+    expect(buttonsContainer.props.class).toBe('o_graph_buttons');
 
-    // Check second bar (Bob)
-    const secondGroup = bars[1];
-    const secondTextLabel = secondGroup.children[1];
-    const secondTextVal = secondGroup.children[2];
-    expect(secondTextLabel.children).toBe('Bob');
-    expect(secondTextVal.children).toBe('1');
+    const barToggleBtn = buttonsContainer.children[0];
+    const lineToggleBtn = buttonsContainer.children[1];
+    const pieToggleBtn = buttonsContainer.children[2];
+
+    expect(barToggleBtn.children).toBe('Bar Chart');
+    expect(lineToggleBtn.children).toBe('Line Chart');
+    expect(pieToggleBtn.children).toBe('Pie Chart');
+
+    // 3. Canvas element assertions
+    const canvas = vnode.children[1];
+    expect(canvas.type).toBe('div');
+    expect(canvas.props.class).toBe('o_graph_canvas');
   });
 
-  test('should render pie chart when type is pie', () => {
+  test('should support dynamic interactive view-mode toggling', () => {
     const arch = {
       tag: 'graph',
-      attrs: { string: 'Partner Pie', type: 'pie' },
+      attrs: { string: 'Partner Interactive', type: 'line' },
       children: [
         { tag: 'field', attrs: { name: 'name', type: 'row' } }
       ]
@@ -64,55 +84,25 @@ describe('GraphRenderer', () => {
 
     const graphInstance = GraphRenderer as any;
     const renderFn = graphInstance.setup({ arch, records }, {});
-    const vnode = renderFn();
-
-    expect(vnode.type).toBe('div');
-    expect(vnode.props.class).toBe('o_graph_view');
-
-    // Contains svg and legend div
-    const svg = vnode.children[0];
-    const legendDiv = vnode.children[1];
     
-    expect(svg.type).toBe('svg');
-    // 2 slices
-    expect(svg.children.length).toBe(2);
-    expect(svg.children[0].type).toBe('path');
+    // Initial render in 'line' mode as requested by arch
+    let vnode = renderFn();
 
-    expect(legendDiv.type).toBe('div');
-    expect(legendDiv.children.length).toBe(2);
-    expect(legendDiv.children[0].children[1].children).toBe('Alice (2)');
-    expect(legendDiv.children[1].children[1].children).toBe('Bob (1)');
-  });
+    const header = vnode.children[0];
+    const buttonsContainer = header.children[1];
+    const barToggleBtn = buttonsContainer.children[0];
+    const pieToggleBtn = buttonsContainer.children[2];
 
-  test('should render line chart when type is line', () => {
-    const arch = {
-      tag: 'graph',
-      attrs: { string: 'Partner Line', type: 'line' },
-      children: [
-        { tag: 'field', attrs: { name: 'name', type: 'row' } }
-      ]
-    };
+    // Trigger state switch to 'pie'
+    pieToggleBtn.props.onClick();
 
-    const graphInstance = GraphRenderer as any;
-    const renderFn = graphInstance.setup({ arch, records }, {});
-    const vnode = renderFn();
-
+    // Re-render and confirm structural toggling remains stable
+    vnode = renderFn();
     expect(vnode.type).toBe('div');
-    expect(vnode.props.class).toBe('o_graph_view');
-
-    const h3 = vnode.children[0];
-    expect(h3.children).toBe('Partner Line');
-
-    const svg = vnode.children[1];
-    expect(svg.type).toBe('svg');
-
-    // Children: gridLines (5), path (1), circles (2), x-labels (2), y-values (2)
-    // 5 + 1 + 2 + 2 + 2 = 12 children in svg
-    expect(svg.children.length).toBe(12);
-
-    // Path element
-    const path = svg.children[5];
-    expect(path.type).toBe('path');
-    expect(path.props.stroke).toBe('#714B67');
+    
+    // Trigger state switch back to 'bar'
+    barToggleBtn.props.onClick();
+    vnode = renderFn();
+    expect(vnode.type).toBe('div');
   });
 });

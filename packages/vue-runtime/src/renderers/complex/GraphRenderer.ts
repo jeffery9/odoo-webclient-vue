@@ -1,4 +1,5 @@
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import * as echarts from 'echarts';
 
 export const GraphRenderer = defineComponent({
   props: {
@@ -6,13 +7,17 @@ export const GraphRenderer = defineComponent({
     records: { type: Array, required: true }
   },
   setup(props: { arch: any, records: any[] }) {
-    return () => {
+    const activeType = ref<'bar' | 'line' | 'pie'>(props.arch?.attrs?.type || 'bar');
+    const canvasRef = ref<HTMLDivElement | null>(null);
+    let myChart: echarts.ECharts | null = null;
+
+    const chartOption = computed(() => {
+      // Extract group-by and row fields
       const fieldNodes = (props.arch?.children || []).filter((c: any) => c.tag === 'field');
       const rowNode = fieldNodes.find((c: any) => c.attrs?.type === 'row') || fieldNodes[0];
       const rowFieldName = rowNode?.attrs?.name || 'name';
-      
-      const graphType = props.arch?.attrs?.type || 'bar';
 
+      // Perform dynamic data compilation
       const groups: Record<string, number> = {};
       props.records.forEach((rec: any) => {
         let val = rec.get ? rec.get(rowFieldName) : rec[rowFieldName];
@@ -24,119 +29,175 @@ export const GraphRenderer = defineComponent({
       });
 
       const dataEntries = Object.entries(groups);
-      const maxVal = Math.max(...dataEntries.map(e => e[1]), 1);
-      const colors = ['#714B67', '#01A299', '#E9A12E', '#F05555', '#3C8dbc', '#a6c8e0'];
+      const labels = dataEntries.map(e => e[0]);
+      const values = dataEntries.map(e => e[1]);
 
-      if (graphType === 'pie') {
-        const total = dataEntries.reduce((sum, e) => sum + e[1], 0);
-        let accumulatedAngle = 0;
-        const slices = dataEntries.map((entry, index) => {
-          const val = entry[1];
-          const angle = (val / total) * 360;
-          const x1 = 150 + 100 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
-          const y1 = 150 + 100 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
-          accumulatedAngle += angle;
-          const x2 = 150 + 100 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
-          const y2 = 150 + 100 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
-          const largeArcFlag = angle > 180 ? 1 : 0;
-          
-          const pathData = `M 150 150 L ${x1} ${y1} A 100 100 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-          return h('path', {
-            d: pathData,
-            fill: colors[index % colors.length],
-            stroke: 'white',
-            strokeWidth: '2'
-          });
-        });
+      const colors = ['#714B67', '#01A299', '#EC9A29', '#E85F5C', '#1F7A8C'];
 
-        const legends = dataEntries.map((entry, index) => {
-          return h('div', { style: 'display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475569;' }, [
-            h('span', { style: `width: 12px; height: 12px; background: ${colors[index % colors.length]}; border-radius: 2px;` }),
-            h('span', null, `${entry[0]} (${entry[1]})`)
-          ]);
-        });
-
-        return h('div', { class: 'o_graph_view', style: 'padding: 24px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' }, [
-          h('svg', { width: '300', height: '300', style: 'overflow: visible;' }, slices),
-          h('div', { style: 'display: flex; flex-direction: column; gap: 8px;' }, legends)
-        ]);
+      if (activeType.value === 'pie') {
+        return {
+          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+          legend: { orient: 'vertical', left: 'left', textStyle: { color: '#475569' } },
+          color: colors,
+          series: [
+            {
+              type: 'pie',
+              radius: '65%',
+              center: ['60%', '50%'],
+              data: dataEntries.map(e => ({ name: e[0], value: e[1] })),
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+              }
+            }
+          ]
+        };
       }
 
-      if (graphType === 'line') {
-        const width = 500;
-        const height = 240;
-        const padding = 40;
-        const graphWidth = width - padding * 2;
-        const graphHeight = height - padding * 2;
+      if (activeType.value === 'line') {
+        return {
+          tooltip: { trigger: 'axis' },
+          grid: { top: '15%', bottom: '15%', left: '10%', right: '10%', containLabel: true },
+          color: colors,
+          xAxis: {
+            type: 'category',
+            data: labels,
+            axisLabel: { color: '#64748b' },
+            axisLine: { lineStyle: { color: '#cbd5e1' } }
+          },
+          yAxis: {
+            type: 'value',
+            axisLabel: { color: '#64748b' },
+            splitLine: { lineStyle: { color: '#f1f5f9' } }
+          },
+          series: [
+            {
+              data: values,
+              type: 'line',
+              smooth: true,
+              lineStyle: { width: 3 },
+              symbolSize: 8
+            }
+          ]
+        };
+      }
 
-        const points = dataEntries.map((entry, index) => {
-          const x = padding + (index / Math.max(dataEntries.length - 1, 1)) * graphWidth;
-          const y = padding + graphHeight - (entry[1] / maxVal) * graphHeight;
-          return { x, y, label: entry[0], val: entry[1] };
+      // Default: Bar Chart
+      return {
+        tooltip: { trigger: 'axis' },
+        grid: { top: '15%', bottom: '15%', left: '10%', right: '10%', containLabel: true },
+        color: colors,
+        xAxis: {
+          type: 'category',
+          data: labels,
+          axisLabel: { color: '#64748b' },
+          axisLine: { lineStyle: { color: '#cbd5e1' } }
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: { color: '#64748b' },
+          splitLine: { lineStyle: { color: '#f1f5f9' } }
+        },
+        series: [
+          {
+            data: values,
+            type: 'bar',
+            barWidth: '40%',
+            itemStyle: {
+              borderRadius: [4, 4, 0, 0]
+            }
+          }
+        ]
+      };
+    });
+
+    onMounted(() => {
+      if (canvasRef.value) {
+        myChart = echarts.init(canvasRef.value);
+        myChart.setOption(chartOption.value);
+
+        // Reactively update options on change
+        watch(chartOption, (newOption) => {
+          myChart?.setOption(newOption, true);
         });
 
-        const dPath = points.length > 0 
-          ? `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')
-          : '';
-
-        const gridLines = Array.from({ length: 5 }).map((_, i) => {
-          const y = padding + (i / 4) * graphHeight;
-          return h('line', { x1: padding, y1: y, x2: width - padding, y2: y, stroke: '#f1f5f9', strokeWidth: '1' });
+        // Register observer for responsive resizing
+        const observer = new ResizeObserver(() => {
+          myChart?.resize();
         });
+        observer.observe(canvasRef.value);
+      }
+    });
 
-        return h('div', { class: 'o_graph_view', style: 'padding: 24px; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' }, [
-          h('h3', { style: 'margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Graph Analysis'),
-          h('svg', { width, height }, [
-            ...gridLines,
-            h('path', { d: dPath, fill: 'none', stroke: '#714B67', strokeWidth: '3' }),
-            ...points.map((p) => h('circle', { cx: p.x, cy: p.y, r: '5', fill: '#714B67', stroke: 'white', strokeWidth: '2' })),
-            ...points.map((p) => h('text', { x: p.x, y: height - 15, textAnchor: 'middle', fontSize: '11', fill: '#64748b' }, p.label)),
-            ...points.map((p) => h('text', { x: p.x, y: p.y - 10, textAnchor: 'middle', fontSize: '11', fontWeight: 'bold', fill: '#1e293b' }, p.val))
+    onBeforeUnmount(() => {
+      myChart?.dispose();
+    });
+
+    return () => {
+      const renderToggleBtn = (type: 'bar' | 'line' | 'pie', label: string) => {
+        const isActive = activeType.value === type;
+        return h('button', {
+          type: 'button',
+          onClick: () => { activeType.value = type; },
+          style: {
+            padding: '4px 12px',
+            borderRadius: '4px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: isActive ? '#714B67' : '#ffffff',
+            color: isActive ? '#ffffff' : '#475569',
+            cursor: 'pointer',
+            fontWeight: '600',
+            fontSize: '12px',
+            transition: 'all 0.15s ease'
+          }
+        }, label);
+      };
+
+      return h('div', {
+        class: 'o_graph_view',
+        style: {
+          padding: '24px',
+          backgroundColor: '#ffffff',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }
+      }, [
+        h('div', {
+          class: 'o_graph_header',
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid #f1f5f9',
+            paddingBottom: '12px'
+          }
+        }, [
+          h('h3', { style: 'margin: 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Graph Analysis'),
+          h('div', {
+            class: 'o_graph_buttons',
+            style: { display: 'flex', gap: '4px' }
+          }, [
+            renderToggleBtn('bar', 'Bar Chart'),
+            renderToggleBtn('line', 'Line Chart'),
+            renderToggleBtn('pie', 'Pie Chart')
           ])
-        ]);
-      }
+        ]),
 
-      const barWidth = 40;
-      const spacing = 24;
-      const height = 240;
-      const padding = 32;
-      const svgWidth = dataEntries.length * (barWidth + spacing) + padding * 2;
-
-      const bars = dataEntries.map((entry, index) => {
-        const hVal = (entry[1] / maxVal) * (height - padding * 2);
-        const x = padding + index * (barWidth + spacing);
-        const y = height - padding - hVal;
-
-        return h('g', null, [
-          h('rect', {
-            x,
-            y,
-            width: barWidth,
-            height: hVal,
-            fill: colors[index % colors.length],
-            rx: '4'
-          }),
-          h('text', {
-            x: x + barWidth / 2,
-            y: height - 10,
-            textAnchor: 'middle',
-            fontSize: '11',
-            fill: '#64748b'
-          }, entry[0]),
-          h('text', {
-            x: x + barWidth / 2,
-            y: y - 8,
-            textAnchor: 'middle',
-            fontSize: '11',
-            fontWeight: 'bold',
-            fill: '#1e293b'
-          }, entry[1])
-        ]);
-      });
-
-      return h('div', { class: 'o_graph_view', style: 'padding: 24px; background: white; border-radius: 8px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto;' }, [
-        h('h3', { style: 'margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: #1e293b;' }, props.arch?.attrs?.string || 'Graph Analysis'),
-        h('svg', { width: svgWidth, height }, bars)
+        h('div', {
+          ref: canvasRef,
+          class: 'o_graph_canvas',
+          style: {
+            width: '100%',
+            height: '320px',
+            minHeight: '280px'
+          }
+        })
       ]);
     };
   }
