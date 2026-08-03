@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { Context } from './context.js';
+import { Context } from '../../src/context/context.js';
 
 describe('Odoo Layered Context Merger', () => {
   test('should merge multiple pre-evaluated object layers correctly', () => {

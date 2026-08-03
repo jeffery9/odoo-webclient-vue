@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SessionManager } from './session.js';
-import { RPCClient } from '../rpc/client.js';
+import { SessionManager } from '../../src/session/session.js';
+import { RPCClient } from '../../src/rpc/client.js';
 
 describe('Odoo Session Runtime', () => {
   beforeEach(() => {

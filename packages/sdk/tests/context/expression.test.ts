@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { Expression } from './expression.js';
+import { Expression } from '../../src/context/expression.js';
 
 describe('Odoo Expression Parser & Evaluator', () => {
   test('should parse and evaluate single identifiers and literals', () => {

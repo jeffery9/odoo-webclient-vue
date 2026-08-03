@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { RecordProxy } from './record.js';
+import { RecordProxy } from '../../src/orm/record.js';
 
 describe('Odoo Watch Graph & Onchange Recalculations', () => {
   test('should trigger local dependency recalculations on field changes', () => {

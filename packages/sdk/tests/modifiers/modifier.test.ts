@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { Modifier } from './modifier.js';
+import { Modifier } from '../../src/modifiers/modifier.js';
 
 describe('Odoo Modifier DSL Compiler', () => {
   const recordActive = { state: 'done', user_id: 1 };

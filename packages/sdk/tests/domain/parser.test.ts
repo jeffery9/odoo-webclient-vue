@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { Domain } from './parser.js';
+import { Domain } from '../../src/domain/parser.js';
 
 describe('Odoo Domain Parser', () => {
   test('should parse a single leaf domain', () => {

@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { HashRouter } from './router.js';
+import { HashRouter } from '../../src/action/router.js';
 
 describe('Odoo Hash Router Sync', () => {
   test('should parse active parameters from standard Odoo URL hashes', () => {

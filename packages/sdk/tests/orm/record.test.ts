@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { RecordProxy } from './record.js';
-import { RPCClient } from '../rpc/client.js';
+import { RecordProxy } from '../../src/orm/record.js';
+import { RPCClient } from '../../src/rpc/client.js';
 
 describe('Odoo Reactive Record Proxy & Transaction Cache', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { Fields } from './fields.js';
+import { Fields } from '../../src/orm/fields.js';
 
 describe('Odoo Field Lifecycles & Relational Serializers', () => {
   describe('Base Field Parsers & Formatters', () => {

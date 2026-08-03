@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
-import { OdooBusClient } from './client.js';
+import { OdooBusClient } from '../../src/bus/client.js';
 
 // Setup Mock WebSocket for node execution environments
 class MockWebSocket {

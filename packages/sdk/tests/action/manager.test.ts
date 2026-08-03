@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { ActionManager, ActionDescriptor } from './manager.js';
+import { ActionManager, ActionDescriptor } from '../../src/action/manager.js';
 
 describe('Odoo Action Manager & Stack-based Navigation', () => {
   test('should push window action to main stack and generate breadcrumbs', async () => {

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { ArchCompiler } from './compiler.js';
+import { ArchCompiler } from '../../src/arch/compiler.js';
 
 describe('Odoo XML Arch & QWeb Compiler', () => {
   test('should compile basic Odoo view XML with nested elements and modifiers', () => {

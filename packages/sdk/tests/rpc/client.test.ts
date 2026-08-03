@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RPCClient, OdooAccessError, OdooValidationError } from './client.js';
+import { RPCClient, OdooAccessError, OdooValidationError } from '../../src/rpc/client.js';
 
 describe('Odoo RPC Client & Batching', () => {
   beforeEach(() => {
