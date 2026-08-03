@@ -1,5 +1,6 @@
-import { defineComponent, h, ref, watch } from 'vue';
+import { defineComponent, h, computed } from 'vue';
 import { useOdooRelationField } from '../composables/useOdooRelationField.js';
+import { ElSelect, ElOption } from 'element-plus';
 
 export const FieldMany2one = defineComponent({
   props: {
@@ -21,111 +22,89 @@ export const FieldMany2one = defineComponent({
       openRelationForm
     } = useOdooRelationField(props);
 
-    const isOpen = ref(false);
-    const query = ref('');
+    const id = computed(() => {
+      const val = value.value;
+      return Array.isArray(val) ? val[0] : null;
+    });
 
-    watch(
-      () => value.value,
-      (newVal) => {
-        if (Array.isArray(newVal)) {
-          query.value = newVal[1] || '';
-        } else {
-          query.value = '';
-        }
-      },
-      { immediate: true }
-    );
-
-    const onInput = (e: any) => {
-      query.value = e.target.value;
-      isOpen.value = true;
-      search(e.target.value);
-    };
-
-    const onFocus = () => {
-      isOpen.value = true;
-      search(query.value);
-    };
-
-    const onBlur = () => {
-      setTimeout(() => {
-        isOpen.value = false;
-      }, 200);
-    };
+    const name = computed(() => {
+      const val = value.value;
+      return Array.isArray(val) ? val[1] : '';
+    });
 
     return () => {
       if (isInvisible.value) {
         return null;
       }
 
-      const val = value.value;
-      const id = Array.isArray(val) ? val[0] : null;
-      const name = Array.isArray(val) ? val[1] : '';
-
       if (isReadonly.value) {
-        if (id !== null && id !== undefined && id !== false) {
+        if (id.value !== null && id.value !== undefined && id.value !== false) {
           return h(
             'a',
             {
-              class: 'o_field_many2one o_readonly text-purple-600 hover:underline cursor-pointer font-medium',
-              onClick: () => openRelationForm(id)
+              class: 'o_field_many2one o_readonly',
+              style: {
+                color: '#714B67',
+                cursor: 'pointer',
+                fontWeight: '600',
+                textDecoration: 'underline'
+              },
+              onClick: () => openRelationForm(id.value as number)
             },
-            name
+            name.value
           );
         }
-        return h('span', { class: 'o_field_many2one o_readonly text-slate-400 font-light' }, '—');
+        return h('span', { class: 'o_field_many2one o_readonly', style: { color: '#94a3b8', fontWeight: '300' } }, '—');
       }
 
-      return h('div', { class: 'o_field_many2one o_field_widget relative' }, [
-        h('div', { class: 'relative flex items-center' }, [
-          h('input', {
-            class: 'o_input w-full pr-8 py-1 px-2 border border-slate-300 rounded focus:outline-none focus:border-purple-600',
-            value: query.value,
-            placeholder: 'Search...',
-            onInput,
-            onFocus,
-            onBlur
-          }),
-          isLoading.value
-            ? h('div', { class: 'absolute right-2 flex items-center justify-center' }, [
-                h('span', { class: 'o_spinner animate-spin w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full' })
-              ])
-            : null
-        ]),
-        isOpen.value
-          ? h(
-              'div',
-              {
-                class: 'o_dropdown absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-60 overflow-y-auto'
-              },
-              [
-                ...suggestions.value.map((sug) =>
-                  h(
-                    'div',
-                    {
-                      class: 'o_dropdown_item px-3 py-2 hover:bg-slate-100 cursor-pointer text-slate-700 text-sm transition-colors duration-150',
-                      onMousedown: () => {
-                        select(sug.id, sug.display_name);
-                        isOpen.value = false;
-                      }
-                    },
-                    sug.display_name
-                  )
-                ),
-                h(
-                  'div',
-                  {
-                    class: 'o_dropdown_item_create border-t border-slate-100 px-3 py-2 hover:bg-purple-50 cursor-pointer text-purple-600 font-medium text-sm transition-colors duration-150',
-                    onMousedown: () => {
-                      openRelationForm();
-                      isOpen.value = false;
-                    }
-                  },
-                  '+ Create and Edit...'
-                )
-              ]
-            )
-          : null
+      return h('div', {
+        class: 'o_field_many2one o_field_widget',
+        style: {
+          '--el-color-primary': '#714B67',
+          '--el-color-primary-light-9': '#f3eff2',
+          '--el-border-radius-base': '6px',
+          width: '100%',
+          display: 'inline-block'
+        }
+      }, [
+        h(ElSelect, {
+          modelValue: id.value,
+          filterable: true,
+          remote: true,
+          placeholder: 'Search...',
+          loading: isLoading.value,
+          remoteMethod: (query: string) => {
+            search(query);
+          },
+          'onUpdate:modelValue': (newId: any) => {
+            if (newId === '__create__') {
+              openRelationForm();
+            } else {
+              const found = suggestions.value.find(s => s.id === newId);
+              if (found) {
+                select(found.id, found.display_name);
+              }
+            }
+          },
+          style: { width: '100%' },
+          class: 'o_field_many2one_select'
+        }, () => [
+          ...suggestions.value.map(s => h(ElOption, {
+            key: s.id,
+            label: s.display_name,
+            value: s.id
+          })),
+          h(ElOption, {
+            key: '__create__',
+            label: '+ Create and Edit...',
+            value: '__create__',
+            style: {
+              color: '#714B67',
+              fontWeight: '600',
+              borderTop: '1px solid #f1f5f9'
+            }
+          })
+        ])
       ]);
     };
   }
