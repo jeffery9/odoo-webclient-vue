@@ -1,5 +1,5 @@
 import { ref, reactive, computed } from 'vue';
-import { RecordProxy } from '@odoo/sdk';
+import { RecordProxy, Domain } from '@odoo/sdk';
 
 export type OdooViewType =
   | 'list'
@@ -40,11 +40,17 @@ export const searchArch = ref<any>({ type: 'search', children: [] });
 export const searchPanelDomain = ref<any[]>([]);
 
 export const filteredRecords = computed(() => {
-  if (!searchQuery.value) return partnerRecords;
-  const q = searchQuery.value.toLowerCase();
-  return partnerRecords.filter(r => {
-    const name = (r.get('name') || '').toLowerCase();
-    const email = (r.get('email') || '').toLowerCase();
-    return name.includes(q) || email.includes(q);
-  });
+  let records = partnerRecords;
+
+  // Evaluate the active searchPanelDomain locally on our records using `@odoo/sdk`'s Domain engine!
+  if (searchPanelDomain.value && searchPanelDomain.value.length > 0) {
+    try {
+      const ast = Domain.parse(searchPanelDomain.value);
+      records = records.filter(r => Domain.evaluate(ast, r as any));
+    } catch (e) {
+      console.warn('Failed to evaluate search panel domain locally:', e);
+    }
+  }
+
+  return records;
 });

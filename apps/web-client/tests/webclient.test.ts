@@ -1,5 +1,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { RecordProxy, RPCClient, SessionManager, ArchCompiler, Context } from '@odoo/sdk';
+import { partnerRecords, searchPanelDomain, filteredRecords } from '../src/workspace/state.js';
+import { OdooControlPanel } from '../src/workspace/OdooControlPanel.js';
 
 describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
   test('should execute full dynamic sequence: login -> load_menus -> load_action -> load_views -> compile -> search_read', async () => {
@@ -272,6 +274,76 @@ describe('Odoo WebClient Dynamic Boot & TDD Metadrive Pipeline', () => {
       ['category_id', '=', 2],
       ['user_id', '=', 1]
     ]);
+  });
+
+  test('should reactive-filter records locally based on active searchPanelDomain using core Domain evaluation engine', () => {
+    // Clear state
+    partnerRecords.splice(0, partnerRecords.length);
+    searchPanelDomain.value = [];
+
+    // Push record proxies
+    partnerRecords.push(
+      new RecordProxy('res.partner', { id: 10, name: 'Marc Demo', active: true }),
+      new RecordProxy('res.partner', { id: 11, name: 'Mitchell Admin', active: true })
+    );
+
+    // Initial unfiltered expectation
+    expect(filteredRecords.value.length).toBe(2);
+
+    // Active domain search trigger
+    searchPanelDomain.value = [['name', '=', 'Marc Demo']];
+
+    // Assert records are filtered locally via core Domain AST engine
+    expect(filteredRecords.value.length).toBe(1);
+    expect(filteredRecords.value[0].get('name')).toBe('Marc Demo');
+
+    // Restore state
+    partnerRecords.splice(0, partnerRecords.length);
+    searchPanelDomain.value = [];
+  });
+
+  test('should compile and render Chinese ERP-style OdooControlPanel with explicit search fields and dynamic filters', () => {
+    // 1. Prepare search view compiled AST containing fields and filters
+    const searchArch = {
+      tag: 'search',
+      children: [
+        { tag: 'field', attrs: { name: 'name', string: 'Name' } },
+        { tag: 'field', attrs: { name: 'user_id', string: 'Responsible' } },
+        { tag: 'filter', attrs: { string: 'Draft', name: 'draft', domain: "[('state', '=', 'draft')]" } },
+        { tag: 'filter', attrs: { string: 'Salesperson', name: 'groupby_user', context: "{'group_by': 'user_id'}" } }
+      ]
+    };
+
+    let emittedSearch: any = null;
+    const onSearchChange = (state: any) => {
+      emittedSearch = state;
+    };
+
+    // 2. Instantiate component and call setup
+    const cpInstance = OdooControlPanel as any;
+    const renderFn = cpInstance.setup({ arch: searchArch, onSearchChange }, {});
+    const vnode = renderFn();
+
+    // Verify root layout classes
+    expect(vnode.type).toBe('div');
+    expect(vnode.props.class).toContain('o_odoo_control_panel');
+
+    // Verify grid headers & labels exist
+    const gridDiv = vnode.children[1];
+    expect(gridDiv.props.class).toContain('grid');
+    expect(gridDiv.children.length).toBe(2); // 2 search fields: name, user_id
+    expect(gridDiv.children[0].children[0].children).toBe('Name');
+    expect(gridDiv.children[1].children[0].children).toBe('Responsible');
+
+    // Verify Filter button groups
+    const filterDiv = vnode.children[2];
+    expect(filterDiv.children[0].children).toBe('快捷过滤 (Quick Filters)');
+    expect(filterDiv.children[1].type).toBe('el-checkbox-group');
+
+    // Verify GroupBy button groups
+    const groupbyDiv = vnode.children[3];
+    expect(groupbyDiv.children[0].children).toBe('数据分组 (Group By)');
+    expect(groupbyDiv.children[1].type).toBe('el-checkbox-group');
   });
 });
 
